@@ -860,6 +860,7 @@ let kidanCurrentCollectionState = null;
 let kidanCurrentProductId = '';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initializeImageFallbacks();
     wireBrandCardLinks();
     renderHomeProducts();
     initializeHeaderSearch();
@@ -877,6 +878,37 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeQualityNavigation();
     initializeSupabaseBackend();
 });
+
+function initializeImageFallbacks() {
+    document.querySelectorAll('img').forEach((image) => {
+        image.loading = image.loading || 'lazy';
+        image.decoding = 'async';
+        if (image.complete && image.naturalWidth === 0) replaceBrokenImage(image);
+        image.addEventListener('error', () => replaceBrokenImage(image), { once: true });
+    });
+}
+
+function replaceBrokenImage(image) {
+    const alt = image.getAttribute('alt') || 'Kidan';
+    const fallback = document.createElement('div');
+    fallback.className = image.classList.contains('brand-logo-img')
+        ? 'brand-logo-fallback'
+        : 'image-fallback';
+    fallback.setAttribute('role', 'img');
+    fallback.setAttribute('aria-label', alt);
+    fallback.textContent = getFallbackInitials(alt);
+    image.replaceWith(fallback);
+}
+
+function getFallbackInitials(text) {
+    const words = String(text || 'K')
+        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+    if (!words.length) return 'K';
+    return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase();
+}
 
 function getBrandEntries() {
     const seen = new Set();

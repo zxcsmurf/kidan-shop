@@ -58,6 +58,17 @@ body {
     overflow-x: hidden;
 }
 
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+img {
+    height: auto;
+}
+
 /* ============================================
    CONTAINER
    ============================================ */
@@ -69,6 +80,20 @@ body {
     padding: 0 var(--spacing-md);
     position: relative;
     z-index: 1;
+}
+
+.categories-section,
+.featured-section,
+.footer-cta,
+#site-footer,
+.brand-results-section,
+.collections-main,
+.product-page-main,
+.chats-main,
+.checkout-main,
+.admin-support-main {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 900px;
 }
 
 /* ============================================
@@ -690,6 +715,29 @@ nav.filter-bar {
   margin: 0 auto 12px;
   transition: transform 0.3s ease, filter 0.3s ease;
   filter: brightness(0) saturate(100%);
+}
+
+.brand-logo-fallback,
+.image-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 12px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ede9fe, #f8f5ff);
+  color: #7c3aed;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.image-fallback {
+  width: 100%;
+  height: 100%;
+  margin: 0;
 }
 .brand-logo-img:hover {
   filter: brightness(0) saturate(100%) invert(25%) sepia(90%)
@@ -3225,5 +3273,428 @@ html[data-theme="dark"] .support-form input {
 
     .chat-message {
         max-width: 92%;
+    }
+}
+
+/* ============================================
+   MOBILE STABILITY & PERFORMANCE PASS
+   ============================================ */
+
+@media (max-width: 640px) {
+    html,
+    body {
+        width: 100%;
+        overflow-x: clip;
+    }
+
+    body {
+        text-size-adjust: 100%;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    #bg-patterns {
+        display: none;
+    }
+
+    .container {
+        padding-inline: 12px;
+    }
+
+    nav.filter-bar {
+        position: sticky;
+        top: 0;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .nav-top {
+        align-items: center;
+        min-width: 0;
+    }
+
+    .nav-brand {
+        max-width: 132px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav-icons {
+        min-width: 0;
+    }
+
+    .nav-icon-btn {
+        flex: 0 0 36px;
+    }
+
+    .nav-badge {
+        top: 2px;
+        right: 2px;
+    }
+
+    .nav-quality-bar {
+        scrollbar-width: none;
+    }
+
+    .nav-quality-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .page-header {
+        padding: 28px 12px 30px;
+    }
+
+    .page-title {
+        font-size: clamp(1.8rem, 9vw, 2.25rem);
+        letter-spacing: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .page-subtitle {
+        margin-bottom: 20px;
+        line-height: 1.55;
+    }
+
+    .header-eyebrow {
+        max-width: 100%;
+        letter-spacing: 1px;
+        white-space: normal;
+    }
+
+    .categories-section,
+    .featured-section,
+    .brand-results-section,
+    .collections-main,
+    .product-page-main,
+    .chats-main,
+    .checkout-main,
+    .admin-support-main {
+        width: min(100% - 20px, 1180px);
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .categories-grid,
+    .featured-grid,
+    .product-grid,
+    .collection-grid,
+    .brand-results-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .category-card,
+    .item-card,
+    .product-card,
+    .collection-card,
+    .empty-listing-card {
+        border-radius: 12px;
+        transform: none !important;
+        animation: none !important;
+        opacity: 1 !important;
+        box-shadow: 0 4px 14px rgba(31, 22, 61, 0.06);
+    }
+
+    .category-card:hover,
+    .item-card:hover,
+    .product-card:hover {
+        transform: none;
+    }
+
+    .card-logo-area {
+        min-height: 92px;
+        padding: 18px 10px 14px;
+    }
+
+    .brand-logo-img {
+        width: 58px;
+        height: 58px;
+        margin-bottom: 6px;
+    }
+
+    .brand-logo-fallback {
+        width: 58px;
+        height: 58px;
+        margin-bottom: 6px;
+        border-radius: 14px;
+        font-size: 20px;
+    }
+
+    .card-info {
+        padding: 10px;
+        min-height: 62px;
+    }
+
+    .brand-name,
+    .product-title,
+    .item-name {
+        overflow-wrap: anywhere;
+    }
+
+    .card-tag,
+    .card-badge {
+        max-width: calc(100% - 16px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .featured-section {
+        padding: 0 0 34px;
+    }
+
+    .featured-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding-inline: 0;
+    }
+
+    .item-img-wrap,
+    .product-image-link,
+    .checkout-summary img {
+        background: #f8f5ff;
+    }
+
+    .item-img,
+    .product-image-link img,
+    .checkout-summary img,
+    .chat-list-item img {
+        object-fit: contain;
+    }
+
+    .product-image-link img,
+    .item-img {
+        transform: none !important;
+    }
+
+    .item-card-empty {
+        min-height: 190px;
+    }
+
+    .item-card-empty .item-img-wrap {
+        min-height: 118px;
+    }
+
+    .brand-hero {
+        padding: 28px 0;
+    }
+
+    .brand-hero-inner {
+        width: min(100% - 20px, 1180px);
+        gap: 18px;
+    }
+
+    .brand-hero h1,
+    .product-detail-panel h1,
+    .payment-result-panel h1 {
+        font-size: clamp(1.85rem, 9vw, 2.4rem);
+        line-height: 1.1;
+        letter-spacing: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .brand-hero p {
+        line-height: 1.55;
+    }
+
+    .brand-mark {
+        justify-self: start;
+    }
+
+    .brand-config-section,
+    .collections-main,
+    .collection-grid,
+    .product-detail,
+    .chat-layout,
+    .checkout-layout,
+    .admin-inbox-layout {
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+
+    .config-panel,
+    .product-gallery,
+    .product-detail-panel,
+    .chat-list,
+    .chat-thread,
+    .checkout-summary,
+    .checkout-panel,
+    .admin-support-shell {
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    .product-main-photo {
+        width: 100%;
+        max-height: 68vh;
+        object-fit: contain;
+        background: #f8f5ff;
+    }
+
+    .product-thumbs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .product-thumb {
+        aspect-ratio: 1 / 1;
+    }
+
+    .product-thumb img {
+        object-fit: contain;
+    }
+
+    .product-actions > * {
+        width: 100%;
+    }
+
+    .chat-layout {
+        gap: 14px;
+    }
+
+    .chat-thread {
+        min-height: 0;
+    }
+
+    .chat-messages {
+        max-height: min(58vh, 460px);
+    }
+
+    .chat-compose {
+        gap: 8px;
+    }
+
+    .chat-compose input,
+    .support-form input,
+    .admin-thread-panel .chat-compose input {
+        font-size: 16px;
+    }
+
+    .support-widget {
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        z-index: 9990;
+    }
+
+    .support-fab {
+        width: 52px;
+        height: 52px;
+    }
+
+    .support-panel {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: calc(72px + env(safe-area-inset-bottom));
+        width: auto;
+        max-height: min(72vh, 520px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .support-messages {
+        height: auto;
+        min-height: 180px;
+        max-height: 42vh;
+    }
+
+    .listing-modal {
+        padding: 10px;
+        align-items: flex-end;
+    }
+
+    .listing-dialog {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        border-radius: 16px 16px 0 0;
+        padding: 18px;
+    }
+
+    .modal-close {
+        top: 12px;
+        right: 12px;
+    }
+
+    .form-grid,
+    .photo-preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-main {
+        padding-top: 20px;
+        padding-bottom: 36px;
+    }
+
+    .checkout-totals div {
+        align-items: flex-start;
+    }
+
+    .checkout-secondary,
+    .view-all-btn,
+    .checkout-primary {
+        width: 100%;
+    }
+
+    .payment-result-panel {
+        padding: 20px;
+        text-align: left;
+    }
+
+    .payment-result-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .order-code {
+        font-size: 12px;
+    }
+
+    .admin-thread-list-body {
+        max-height: 36vh;
+    }
+
+    .admin-thread-panel .chat-messages {
+        max-height: 44vh;
+    }
+
+    .footer-cta {
+        padding: 42px 12px;
+    }
+
+    #site-footer {
+        padding: 38px 16px 24px;
+    }
+
+    .footer-inner {
+        gap: 26px;
+    }
+}
+
+@media (max-width: 380px) {
+    .nav-brand {
+        max-width: 108px;
+        font-size: 16px;
+    }
+
+    .sell-btn {
+        max-width: 92px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav-icon-btn {
+        flex-basis: 34px;
+        width: 34px;
+        height: 34px;
+    }
+
+    .categories-grid,
+    .featured-grid,
+    .product-grid,
+    .collection-grid,
+    .brand-results-grid {
+        gap: 8px;
     }
 }
