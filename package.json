@@ -1,0 +1,13 @@
+{
+  "name": "kidan-shop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx http-server . -p 4178 -c-1",
+    "check": "node --check script.js",
+    "build": "npm run check"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
