@@ -33,6 +33,19 @@ checkout.session.expired
 
 Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
 
+## Test card
+
+After `STRIPE_SECRET_KEY` is added and the project is redeployed, open a listing and click `Buy now`.
+Use Stripe test card:
+
+```text
+4242 4242 4242 4242
+```
+
+Use any future expiration date, any CVC, and any ZIP/postal code.
+
+The starter products on the homepage use server-side trusted prices in `api/create-checkout-session.js`. Supabase-created listings are read from the `listings` table by UUID.
+
 ## Important
 
 If a secret key was pasted into chat, rotate it in Stripe Dashboard before using payments with real users.
