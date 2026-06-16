@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "npx http-server . -p 4178 -c-1",
-    "check": "node --check script.js && node --check api/create-checkout-session.js && node --check api/stripe-webhook.js",
+    "check": "node --check script.js && node --check api/create-checkout-session.js && node --check api/stripe-webhook.js && node --check api/support-admin.js",
     "build": "npm run check"
   },
   "devDependencies": {

@@ -2359,21 +2359,49 @@ async function renderAdminSupportAuthState() {
     const root = document.getElementById('admin-support-root');
     if (!root) return;
 
-    const client = await getSupabaseClient();
-    if (!client) {
-        root.innerHTML = `<section class="wishlist-empty"><h2>Supabase is unavailable</h2><p>Check your internet connection and try again.</p></section>`;
+    const pin = sessionStorage.getItem('kidanSupportAdminPin');
+    if (!pin) {
+        renderAdminPinLogin(root);
         return;
     }
 
-    const { data } = await client.auth.getSession();
-    const session = data?.session;
-
-    if (!session) {
-        renderAdminLogin(root);
+    const result = await callSupportAdminApi({ action: 'list' });
+    if (!result.ok) {
+        sessionStorage.removeItem('kidanSupportAdminPin');
+        renderAdminPinLogin(root, result.error);
         return;
     }
 
-    renderAdminInbox(root, session);
+    renderAdminInbox(root, pin);
+}
+
+function renderAdminPinLogin(root, message = '') {
+    root.innerHTML = `
+      <section class="admin-login-panel">
+        <div>
+          <span class="modal-eyebrow">Secure access</span>
+          <h2>Support PIN</h2>
+          <p class="admin-muted">Enter the private support PIN from Vercel environment variables. This avoids email, Google, and SMS redirects.</p>
+        </div>
+
+        <form class="admin-auth-card admin-pin-card" id="admin-pin-form">
+          <h3>Operator access</h3>
+          <input type="password" id="admin-pin" placeholder="Support PIN" autocomplete="current-password" required>
+          <button type="submit">Open inbox</button>
+        </form>
+
+        <p class="admin-status" id="admin-auth-status">${escapeHtml(message)}</p>
+      </section>
+    `;
+
+    document.getElementById('admin-pin-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const pin = document.getElementById('admin-pin')?.value.trim();
+        if (!pin) return;
+        sessionStorage.setItem('kidanSupportAdminPin', pin);
+        setAdminAuthStatus('Opening support inbox...');
+        await renderAdminSupportAuthState();
+    });
 }
 
 function renderAdminLogin(root) {
@@ -2502,16 +2530,9 @@ async function wireAdminAuthForms() {
 }
 
 async function fetchAdminSupportThreads() {
-    const client = await getSupabaseClient();
-    if (!client) return [];
-
-    const { data, error } = await client
-        .from('support_threads')
-        .select('id,session_id,status,customer_label,created_at,updated_at,support_messages(id,sender,body,created_at)')
-        .order('updated_at', { ascending: false });
-
-    if (error) return [];
-    return data || [];
+    const result = await callSupportAdminApi({ action: 'list' });
+    if (!result.ok) return [];
+    return result.data?.threads || [];
 }
 
 function normalizeAdminThread(thread) {
@@ -2521,14 +2542,14 @@ function normalizeAdminThread(thread) {
     return { ...thread, messages, last };
 }
 
-async function renderAdminInbox(root, session) {
+async function renderAdminInbox(root) {
     root.innerHTML = `
       <section class="admin-inbox-layout">
         <aside class="admin-thread-list">
           <div class="admin-panel-head">
             <div>
               <span class="modal-eyebrow">Signed in</span>
-              <strong>${escapeHtml(session.user.email || session.user.phone || 'Operator')}</strong>
+              <strong>Support operator</strong>
             </div>
             <button type="button" id="admin-sign-out">Sign out</button>
           </div>
@@ -2543,8 +2564,7 @@ async function renderAdminInbox(root, session) {
     `;
 
     document.getElementById('admin-sign-out')?.addEventListener('click', async () => {
-        const client = await getSupabaseClient();
-        await client?.auth.signOut();
+        sessionStorage.removeItem('kidanSupportAdminPin');
         await renderAdminSupportAuthState();
     });
 
@@ -2626,32 +2646,30 @@ function renderAdminThread(thread) {
 }
 
 async function sendAdminSupportReply(threadId, text) {
-    const client = await getSupabaseClient();
-    if (!client || !text.trim()) return false;
-
-    const createdAt = new Date().toISOString();
-    const { error } = await client
-        .from('support_messages')
-        .insert({ thread_id: threadId, sender: 'agent', body: text.trim(), created_at: createdAt });
-
-    if (error) return false;
-
-    await client
-        .from('support_threads')
-        .update({ status: 'open', updated_at: createdAt })
-        .eq('id', threadId);
-
-    return true;
+    const result = await callSupportAdminApi({ action: 'reply', threadId, body: text.trim() });
+    return result.ok;
 }
 
 async function updateSupportThreadStatus(threadId, status) {
-    const client = await getSupabaseClient();
-    if (!client) return false;
-    const { error } = await client
-        .from('support_threads')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', threadId);
-    return !error;
+    if (status !== 'closed') return false;
+    const result = await callSupportAdminApi({ action: 'close', threadId });
+    return result.ok;
+}
+
+async function callSupportAdminApi(payload) {
+    const pin = sessionStorage.getItem('kidanSupportAdminPin') || '';
+    try {
+        const response = await fetch('/api/support-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin, ...payload })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) return { ok: false, error: data.error || 'Support admin request failed.' };
+        return { ok: true, data };
+    } catch (error) {
+        return { ok: false, error: 'Support admin API is unavailable.' };
+    }
 }
 
 function renderCollectionTabs(active) {
