@@ -739,7 +739,7 @@ async function fetchSupportMessages() {
     const client = await getSupabaseClient();
     if (!client) return [];
 
-    const thread = await getOrCreateSupportThread();
+    const thread = await getExistingSupportThread();
     if (!thread?.id) return [];
 
     try {
@@ -754,6 +754,24 @@ async function fetchSupportMessages() {
         return data || [];
     } catch (error) {
         return [];
+    }
+}
+
+async function getExistingSupportThread() {
+    const client = await getSupabaseClient();
+    if (!client) return null;
+
+    const sessionId = getKidanSessionId();
+
+    try {
+        const { data } = await client
+            .from('support_threads')
+            .select('id,session_id,status,customer_label,created_at,updated_at')
+            .eq('session_id', sessionId)
+            .maybeSingle();
+        return data || null;
+    } catch (error) {
+        return null;
     }
 }
 
@@ -2539,7 +2557,12 @@ function normalizeAdminThread(thread) {
     const messages = [...(thread.support_messages || [])]
         .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
     const last = messages[messages.length - 1];
-    return { ...thread, messages, last };
+    return {
+        ...thread,
+        messages,
+        last,
+        lastMessageAt: last?.created_at || thread.updated_at || thread.created_at
+    };
 }
 
 async function renderAdminInbox(root) {
@@ -2577,9 +2600,14 @@ async function refreshAdminThreads() {
     const list = document.getElementById('admin-thread-list');
     if (!list) return;
 
-    const threads = (await fetchAdminSupportThreads()).map(normalizeAdminThread);
+    const threads = (await fetchAdminSupportThreads())
+        .map(normalizeAdminThread)
+        .filter((thread) => thread.messages.length)
+        .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
     if (!threads.length) {
         list.innerHTML = '<div class="chat-empty-small">No support conversations yet.</div>';
+        const panel = document.getElementById('admin-thread-panel');
+        if (panel) panel.innerHTML = '<div class="wishlist-empty"><h2>No conversations yet</h2><p>Customer messages will appear here after someone writes to support.</p></div>';
         return;
     }
 
@@ -2587,7 +2615,7 @@ async function refreshAdminThreads() {
     list.innerHTML = threads.map((thread) => `
       <button type="button" class="admin-thread-item${thread.id === activeId ? ' active' : ''}" data-support-thread="${escapeHtml(thread.id)}">
         <strong>${escapeHtml(thread.customer_label || 'Website visitor')}</strong>
-        <span>${escapeHtml(thread.last?.body || 'No messages yet')}</span>
+        <span>${thread.last?.sender === 'agent' ? 'You: ' : 'Customer: '}${escapeHtml(thread.last?.body || '')}</span>
       </button>
     `).join('');
 

@@ -60,7 +60,26 @@ async function listThreads() {
     'select=id,session_id,status,customer_label,created_at,updated_at,support_messages(id,sender,body,created_at)',
     'order=updated_at.desc',
   ].join('&');
-  return supabaseFetch(`/support_threads?${query}`);
+  const threads = await supabaseFetch(`/support_threads?${query}`);
+  return (threads || [])
+    .map((thread) => ({
+      ...thread,
+      support_messages: Array.isArray(thread.support_messages) ? thread.support_messages : [],
+    }))
+    .filter((thread) => thread.support_messages.length)
+    .sort((a, b) => {
+      const aLast = latestMessageAt(a.support_messages) || a.updated_at || a.created_at;
+      const bLast = latestMessageAt(b.support_messages) || b.updated_at || b.created_at;
+      return new Date(bLast || 0) - new Date(aLast || 0);
+    });
+}
+
+function latestMessageAt(messages) {
+  return messages.reduce((latest, message) => {
+    if (!message.created_at) return latest;
+    if (!latest || new Date(message.created_at) > new Date(latest)) return message.created_at;
+    return latest;
+  }, '');
 }
 
 async function patchThread(threadId, patch) {
