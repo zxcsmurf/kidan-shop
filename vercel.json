@@ -4,6 +4,16 @@
   "outputDirectory": ".",
   "cleanUrls": false,
   "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/admin-support",
+      "destination": "/admin-support.html"
+    },
+    {
+      "source": "/support-admin",
+      "destination": "/admin-support.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
