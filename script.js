@@ -880,12 +880,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeImageFallbacks() {
-    document.querySelectorAll('img').forEach((image) => {
-        image.loading = image.loading || 'lazy';
-        image.decoding = 'async';
-        if (image.complete && image.naturalWidth === 0) replaceBrokenImage(image);
-        image.addEventListener('error', () => replaceBrokenImage(image), { once: true });
+    document.querySelectorAll('img').forEach(prepareImage);
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType !== 1) return;
+                if (node.tagName === 'IMG') prepareImage(node);
+                node.querySelectorAll?.('img').forEach(prepareImage);
+            });
+        });
     });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function prepareImage(image) {
+    if (image.dataset.kidanImageReady === 'true') return;
+    image.dataset.kidanImageReady = 'true';
+    image.loading = image.loading || 'lazy';
+    image.decoding = 'async';
+    if (image.complete && image.naturalWidth === 0) replaceBrokenImage(image);
+    image.addEventListener('error', () => replaceBrokenImage(image), { once: true });
 }
 
 function replaceBrokenImage(image) {
