@@ -630,6 +630,35 @@ function loadImageForCompression(file) {
     });
 }
 
+async function dataUrlToImageFile(dataUrl, name = 'listing-photo.jpg') {
+    if (!String(dataUrl || '').startsWith('data:image/')) return null;
+
+    try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        if (!blob.type?.startsWith('image/')) return null;
+        return new File([blob], name, { type: blob.type, lastModified: Date.now() });
+    } catch (error) {
+        return null;
+    }
+}
+
+async function buildPhotoFilesForRemote(product, photoFiles = []) {
+    const explicitFiles = Array.from(photoFiles || []).filter((file) => file?.type?.startsWith('image/'));
+    if (explicitFiles.length) return explicitFiles.slice(0, 6);
+
+    const dataPhotos = (product.photos || [])
+        .filter((photo) => String(photo || '').startsWith('data:image/'))
+        .slice(0, 6);
+
+    const files = [];
+    for (const [index, photo] of dataPhotos.entries()) {
+        const file = await dataUrlToImageFile(photo, `listing-photo-${index + 1}.jpg`);
+        if (file) files.push(file);
+    }
+    return files;
+}
+
 function saveListingToStats(listing) {
     const stats = getMarketplaceStats();
     const brandNames = Array.isArray(stats.brandNames) ? stats.brandNames : [];
@@ -1207,17 +1236,27 @@ async function createRemoteListing(product, photoFiles = []) {
     const { data, error } = response;
     if (error || !data) return null;
 
-    const storagePhotos = await uploadListingPhotoFiles(client, data.id, photoFiles);
-    const fallbackPhotos = (Array.isArray(product.photos) && product.photos.length ? product.photos : [product.image]).filter(Boolean);
+    const uploadFiles = await buildPhotoFilesForRemote(product, photoFiles);
+    const storagePhotos = await uploadListingPhotoFiles(client, data.id, uploadFiles);
+    const fallbackPhotos = (Array.isArray(product.photos) && product.photos.length ? product.photos : [product.image])
+        .filter(Boolean)
+        .filter((photo) => !String(photo).startsWith('data:image/') || String(photo).length < 900000);
     const photos = storagePhotos.length ? storagePhotos : fallbackPhotos;
     if (photos.length) {
         try {
-            await client.from('listing_photos').insert(photos.slice(0, 6).map((imageUrl, index) => ({
+            const insertResponse = await client.from('listing_photos').insert(photos.slice(0, 6).map((imageUrl, index) => ({
                 listing_id: data.id,
                 image_url: imageUrl,
                 sort_order: index
             })));
-        } catch (error) {}
+            if (insertResponse.error) {
+                await client.from('listings').delete().eq('id', data.id);
+                return null;
+            }
+        } catch (error) {
+            await client.from('listings').delete().eq('id', data.id);
+            return null;
+        }
     }
 
     return normalizeRemoteListing({ ...data, listing_photos: photos.map((image_url, sort_order) => ({ image_url, sort_order })) });
@@ -1260,10 +1299,36 @@ function refreshDynamicProductViews() {
 async function initializeSupabaseBackend() {
     getKidanSessionId();
     const products = await fetchRemoteProducts();
+    await syncLocalProductsToRemote();
     await fetchRemoteWishlist();
     await fetchRemoteChats();
     if (products.length || getRemoteChats().length) refreshDynamicProductViews();
     if (window.location.pathname.endsWith('/chats.html')) renderChatsPage();
+}
+
+async function syncLocalProductsToRemote() {
+    const localProducts = getUserProducts();
+    if (!localProducts.length) return [];
+
+    const syncedProducts = [];
+    for (const product of localProducts.slice(0, 8)) {
+        const remoteProduct = await createRemoteListing(product, []);
+        if (!remoteProduct) continue;
+        syncedProducts.push(remoteProduct);
+        removeLocalProduct(product.id);
+    }
+
+    if (syncedProducts.length) {
+        const existing = getRemoteProducts();
+        const next = [
+            ...syncedProducts,
+            ...existing.filter((item) => !syncedProducts.some((synced) => synced.id === item.id))
+        ];
+        setRemoteProducts(next);
+        refreshDynamicProductViews();
+    }
+
+    return syncedProducts;
 }
 
 function normalizeText(value) {
