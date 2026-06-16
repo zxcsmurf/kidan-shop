@@ -17,6 +17,22 @@ const STATIC_LISTINGS = {
 };
 
 module.exports = async function handler(req, res) {
+  try {
+    return await handleCheckout(req, res);
+  } catch (error) {
+    console.error('Stripe checkout failed:', {
+      type: error?.type,
+      code: error?.code,
+      message: error?.message,
+    });
+
+    return res.status(502).json({
+      error: getSafeCheckoutError(error),
+    });
+  }
+};
+
+async function handleCheckout(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
@@ -52,9 +68,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Listing price is not valid for Stripe Checkout.' });
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-12-17.basil',
-  });
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   const origin = getAppOrigin(req);
   const checkoutSession = await stripe.checkout.sessions.create({
@@ -90,7 +104,7 @@ module.exports = async function handler(req, res) {
   });
 
   return res.status(200).json({ url: checkoutSession.url });
-};
+}
 
 async function resolveListing(listingId) {
   if (UUID_RE.test(listingId)) return fetchListing(listingId);
@@ -141,6 +155,22 @@ async function patchOrder(orderId, patch) {
 
 function isSafeListingId(value) {
   return UUID_RE.test(value) || /^[a-z0-9-]{2,80}$/i.test(value);
+}
+
+function getSafeCheckoutError(error) {
+  if (error?.type === 'StripeAuthenticationError') {
+    return 'Stripe secret key is invalid or was not saved correctly in Vercel.';
+  }
+
+  if (error?.type === 'StripePermissionError') {
+    return 'Stripe account does not allow this checkout request yet.';
+  }
+
+  if (error?.type === 'StripeInvalidRequestError') {
+    return error.message || 'Stripe rejected the checkout request.';
+  }
+
+  return 'Stripe checkout failed on the server. Check Vercel Function logs.';
 }
 
 function getAppOrigin(req) {

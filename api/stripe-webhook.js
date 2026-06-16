@@ -10,9 +10,7 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'Stripe webhook is not configured.' });
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-12-17.basil',
-  });
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   const signature = req.headers['stripe-signature'];
   const rawBody = await readRawBody(req);
