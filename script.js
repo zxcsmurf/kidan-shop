@@ -562,14 +562,72 @@ function updateMarketplaceStatsUI(stats) {
 }
 
 function readFilesAsDataUrls(files) {
-    return Promise.all(Array.from(files || []).slice(0, 6).map((file) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-        });
+    return Promise.all(Array.from(files || []).slice(0, 6).map(async (file) => {
+        const imageFile = await compressImageFile(file, { maxSize: 900, quality: 0.72 });
+        return readBlobAsDataUrl(imageFile);
     })).then((items) => items.filter(Boolean));
+}
+
+function readBlobAsDataUrl(blob) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function compressImageFile(file, options = {}) {
+    if (!file?.type?.startsWith('image/')) return file;
+    if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+
+    const maxSize = options.maxSize || 1400;
+    const quality = options.quality || 0.78;
+
+    try {
+        const image = await loadImageForCompression(file);
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d', { alpha: false });
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        if (image.close) image.close();
+
+        const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/jpeg', quality);
+        });
+
+        if (!blob) return file;
+        const baseName = (file.name || 'listing-photo').replace(/\.[^.]+$/, '');
+        return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+    } catch (error) {
+        return file;
+    }
+}
+
+function loadImageForCompression(file) {
+    if ('createImageBitmap' in window) {
+        return createImageBitmap(file, { imageOrientation: 'from-image' });
+    }
+
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const url = URL.createObjectURL(file);
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+        };
+        image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Unable to decode image'));
+        };
+        image.src = url;
+    });
 }
 
 function saveListingToStats(listing) {
@@ -947,7 +1005,22 @@ function getUserProducts() {
 }
 
 function setUserProducts(products) {
-    localStorage.setItem('kidanProducts', JSON.stringify(products));
+    try {
+        localStorage.setItem('kidanProducts', JSON.stringify(products));
+        return true;
+    } catch (error) {
+        const compactProducts = products.map((product) => ({
+            ...product,
+            image: product.image?.startsWith('data:') ? 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=700&q=80' : product.image,
+            photos: (product.photos || []).filter((photo) => !String(photo).startsWith('data:'))
+        }));
+        try {
+            localStorage.setItem('kidanProducts', JSON.stringify(compactProducts));
+            return true;
+        } catch (secondError) {
+            return false;
+        }
+    }
 }
 
 function getRemoteProducts() {
@@ -1083,14 +1156,15 @@ async function uploadListingPhotoFiles(client, listingId, files = []) {
 
     for (const [index, file] of safeFiles.entries()) {
         if (!file?.type?.startsWith('image/')) continue;
-        const extension = (file.name || 'photo.jpg').split('.').pop()?.toLowerCase() || 'jpg';
+        const uploadFile = await compressImageFile(file, { maxSize: 1400, quality: 0.82 });
+        const extension = (uploadFile.name || 'photo.jpg').split('.').pop()?.toLowerCase() || 'jpg';
         const path = `${listingId}/${Date.now()}-${index}.${extension}`;
         const { error } = await client.storage
             .from('listing-photos')
-            .upload(path, file, {
+            .upload(path, uploadFile, {
                 cacheControl: '3600',
                 upsert: false,
-                contentType: file.type
+                contentType: uploadFile.type || 'image/jpeg'
             });
 
         if (error) continue;
