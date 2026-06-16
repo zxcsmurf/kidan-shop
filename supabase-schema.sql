@@ -106,7 +106,9 @@ grant select, insert, update, delete on public.chats to anon, authenticated;
 grant select, insert, update, delete on public.messages to anon, authenticated;
 grant select, insert, update, delete on public.support_threads to anon, authenticated;
 grant select, insert, update, delete on public.support_messages to anon, authenticated;
-grant select, insert, update on public.orders to anon, authenticated;
+revoke all on public.orders from anon, authenticated;
+grant insert on public.orders to anon, authenticated;
+grant select, insert, update on public.orders to service_role;
 
 alter table public.listings enable row level security;
 alter table public.listing_photos enable row level security;
@@ -210,18 +212,21 @@ with check (
 drop policy if exists "Orders readable" on public.orders;
 create policy "Orders readable"
 on public.orders for select
-using (true);
+using (auth.role() = 'service_role');
 
 drop policy if exists "Orders insertable" on public.orders;
 create policy "Orders insertable"
 on public.orders for insert
-with check (status = 'pending_payment_setup');
+with check (
+  status = 'pending_payment_setup'
+  and provider = 'manual_placeholder'
+);
 
 drop policy if exists "Orders updatable" on public.orders;
 create policy "Orders updatable"
 on public.orders for update
-using (true)
-with check (true);
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
 
 create index if not exists listings_brand_idx on public.listings (brand);
 create index if not exists listings_tag_idx on public.listings (tag);

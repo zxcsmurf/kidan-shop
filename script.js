@@ -1794,17 +1794,17 @@ function renderCheckoutPage() {
           </aside>
 
           <section class="checkout-panel">
-            <span class="modal-eyebrow">Payments are not live yet</span>
-            <h2>Stripe Checkout placeholder</h2>
-            <p class="checkout-copy">This page intentionally does not collect card numbers, CVV, bank details, or personal payment data. When Stripe is connected, the button will redirect buyers to Stripe's hosted checkout.</p>
+            <span class="modal-eyebrow">Secure hosted checkout</span>
+            <h2>Stripe Checkout</h2>
+            <p class="checkout-copy">This page never collects card numbers, CVV, bank details, or personal payment data. When Stripe environment variables are enabled on Vercel, the button redirects buyers to Stripe's hosted checkout.</p>
 
             <div class="checkout-safety-list">
               <div><strong>No card fields here</strong><span>Payment data must be handled by Stripe, not this static frontend.</span></div>
-              <div><strong>Order record only</strong><span>Clicking below creates a safe pending order in Supabase.</span></div>
+              <div><strong>Order record first</strong><span>Clicking below creates a safe pending order before redirecting to Stripe.</span></div>
               <div><strong>Seller contact remains open</strong><span>Buyers can still message the seller while payment setup is pending.</span></div>
             </div>
 
-            <button type="button" class="config-apply checkout-primary" id="checkout-placeholder-pay">Create pending order</button>
+            <button type="button" class="config-apply checkout-primary" id="checkout-placeholder-pay">Continue to secure checkout</button>
             <a class="checkout-secondary" href="./chats.html">Go to chats</a>
             <p class="admin-muted" id="checkout-status"></p>
           </section>
@@ -1818,7 +1818,16 @@ function renderCheckoutPage() {
         if (button) button.setAttribute('disabled', 'true');
         if (status) status.textContent = 'Creating pending order...';
         const order = await createCheckoutOrder(product);
-        window.location.href = './payment-success.html?order=' + encodeURIComponent(order.id) + '&placeholder=1';
+        if (status) status.textContent = 'Opening Stripe Checkout...';
+
+        const checkout = await createStripeCheckoutSession(product, order);
+        if (checkout?.url) {
+            window.location.href = checkout.url;
+            return;
+        }
+
+        const fallback = checkout?.message || 'Stripe is not configured yet. The order was saved as pending and no money was charged.';
+        window.location.href = './payment-success.html?order=' + encodeURIComponent(order.id) + '&placeholder=1&message=' + encodeURIComponent(fallback);
     });
 
     initializeBrandThemeToggle();
@@ -1834,9 +1843,11 @@ function renderPaymentResultPage() {
     const orderId = new URLSearchParams(window.location.search).get('order') || '';
     const isSuccess = status === 'success';
     const title = isSuccess ? 'Pending order created' : 'Checkout cancelled';
-    const copy = isSuccess
-        ? 'Stripe is not connected yet, so no money was charged. The order is stored as pending_payment_setup.'
-        : 'No payment was attempted and no money was charged.';
+    const customMessage = new URLSearchParams(window.location.search).get('message');
+    const copy = customMessage || (isSuccess
+        ? 'If Stripe completed the checkout, the order will be confirmed by the secure webhook. If this was placeholder mode, no money was charged.'
+        : 'No payment was attempted and no money was charged.'
+    );
 
     document.body.innerHTML = renderSimplePageShell(`
       <main class="checkout-main">
@@ -1853,7 +1864,6 @@ function renderPaymentResultPage() {
       </main>
     `);
 
-    if (isSuccess && orderId) updateCheckoutOrderStatus(orderId, 'pending_payment_setup');
     initializeBrandThemeToggle();
     updateWishlistBadge();
     initializeQualityNavigation();
@@ -1997,8 +2007,9 @@ async function addRemoteMessage(chatId, text, from = 'buyer') {
 }
 
 async function createCheckoutOrder(product) {
+    const orderId = crypto?.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${String(Date.now()).slice(-12).padStart(12, '0')}`;
     const order = {
-        id: `local-order-${Date.now()}`,
+        id: orderId,
         session_id: getKidanSessionId(),
         listing_id: product.id,
         listing_title: product.title,
@@ -2018,29 +2029,31 @@ async function createCheckoutOrder(product) {
     try {
         const { data, error } = await client
             .from('orders')
-            .insert(order)
-            .select('id,session_id,listing_id,listing_title,seller_name,amount,currency,status,provider,note,created_at,updated_at')
-            .single();
+            .insert(order);
 
-        if (!error && data) return data;
+        if (!error) return order;
     } catch (error) {}
 
     return order;
 }
 
-async function updateCheckoutOrderStatus(orderId, status) {
-    if (!isSupabaseUuid(orderId)) return false;
-    const client = await getSupabaseClient();
-    if (!client) return false;
-
+async function createStripeCheckoutSession(product, order) {
     try {
-        const { error } = await client
-            .from('orders')
-            .update({ status, updated_at: new Date().toISOString() })
-            .eq('id', orderId);
-        return !error;
+        const response = await fetch('/api/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: order.id,
+                listingId: product.id,
+                sessionId: order.session_id
+            })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) return { message: payload.error || 'Stripe checkout is not available yet.' };
+        return payload;
     } catch (error) {
-        return false;
+        return { message: 'Stripe checkout is not available in local static preview yet.' };
     }
 }
 

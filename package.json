@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "start": "npx http-server . -p 4178 -c-1",
-    "check": "node --check script.js",
+    "check": "node --check script.js && node --check api/create-checkout-session.js && node --check api/stripe-webhook.js",
     "build": "npm run check"
   },
   "devDependencies": {
     "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "stripe": "^22.2.1"
   }
 }
