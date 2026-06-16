@@ -854,6 +854,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProductDetailPage();
     renderChatsPage();
     renderAdminSupportPage();
+    renderCheckoutPage();
+    renderPaymentResultPage();
     initializeQualityNavigation();
     initializeSupabaseBackend();
 });
@@ -1748,6 +1750,115 @@ function renderWishlistPage() {
     initializeQualityNavigation();
 }
 
+function renderCheckoutPage() {
+    const page = document.querySelector('[data-checkout-page]');
+    if (!page) return;
+
+    const productId = new URLSearchParams(window.location.search).get('id');
+    const product = getProductById(productId);
+
+    if (!product) {
+        document.body.innerHTML = renderSimplePageShell(`
+          <main class="checkout-main">
+            <section class="wishlist-empty product-not-found">
+              <h2>Listing not found</h2>
+              <p>This checkout link is incomplete or the listing is no longer available.</p>
+              <a href="./view-all.html" class="view-all-btn">Browse listings</a>
+            </section>
+          </main>
+        `);
+        initializeBrandThemeToggle();
+        updateWishlistBadge();
+        initializeQualityNavigation();
+        return;
+    }
+
+    const photos = (Array.isArray(product.photos) && product.photos.length ? product.photos : [product.image]).filter(Boolean);
+
+    document.body.innerHTML = renderSimplePageShell(`
+      <main class="checkout-main">
+        <a class="brand-back-link product-back" href="./product.html?id=${encodeURIComponent(product.id)}">Back to listing</a>
+        <section class="checkout-layout">
+          <aside class="checkout-summary">
+            <img src="${escapeHtml(photos[0])}" alt="${escapeHtml(product.title)}">
+            <div>
+              <span class="header-eyebrow">Secure checkout preview</span>
+              <h1>${escapeHtml(product.title)}</h1>
+              <p>${escapeHtml(canonicalBrandName(product.brand))} · ${escapeHtml(product.condition)} · ${escapeHtml(product.color)}</p>
+            </div>
+            <dl class="checkout-totals">
+              <div><dt>Item price</dt><dd>${formatPrice(product.price)}</dd></div>
+              <div><dt>Marketplace fee</dt><dd>$0</dd></div>
+              <div><dt>Total today</dt><dd>${formatPrice(product.price)}</dd></div>
+            </dl>
+          </aside>
+
+          <section class="checkout-panel">
+            <span class="modal-eyebrow">Payments are not live yet</span>
+            <h2>Stripe Checkout placeholder</h2>
+            <p class="checkout-copy">This page intentionally does not collect card numbers, CVV, bank details, or personal payment data. When Stripe is connected, the button will redirect buyers to Stripe's hosted checkout.</p>
+
+            <div class="checkout-safety-list">
+              <div><strong>No card fields here</strong><span>Payment data must be handled by Stripe, not this static frontend.</span></div>
+              <div><strong>Order record only</strong><span>Clicking below creates a safe pending order in Supabase.</span></div>
+              <div><strong>Seller contact remains open</strong><span>Buyers can still message the seller while payment setup is pending.</span></div>
+            </div>
+
+            <button type="button" class="config-apply checkout-primary" id="checkout-placeholder-pay">Create pending order</button>
+            <a class="checkout-secondary" href="./chats.html">Go to chats</a>
+            <p class="admin-muted" id="checkout-status"></p>
+          </section>
+        </section>
+      </main>
+    `);
+
+    document.getElementById('checkout-placeholder-pay')?.addEventListener('click', async () => {
+        const button = document.getElementById('checkout-placeholder-pay');
+        const status = document.getElementById('checkout-status');
+        if (button) button.setAttribute('disabled', 'true');
+        if (status) status.textContent = 'Creating pending order...';
+        const order = await createCheckoutOrder(product);
+        window.location.href = './payment-success.html?order=' + encodeURIComponent(order.id) + '&placeholder=1';
+    });
+
+    initializeBrandThemeToggle();
+    updateWishlistBadge();
+    initializeQualityNavigation();
+}
+
+function renderPaymentResultPage() {
+    const page = document.querySelector('[data-payment-result-page]');
+    if (!page) return;
+
+    const status = page.getAttribute('data-payment-status') || 'success';
+    const orderId = new URLSearchParams(window.location.search).get('order') || '';
+    const isSuccess = status === 'success';
+    const title = isSuccess ? 'Pending order created' : 'Checkout cancelled';
+    const copy = isSuccess
+        ? 'Stripe is not connected yet, so no money was charged. The order is stored as pending_payment_setup.'
+        : 'No payment was attempted and no money was charged.';
+
+    document.body.innerHTML = renderSimplePageShell(`
+      <main class="checkout-main">
+        <section class="payment-result-panel">
+          <span class="header-eyebrow">${isSuccess ? 'Safe placeholder' : 'Cancelled'}</span>
+          <h1>${title}</h1>
+          <p>${copy}</p>
+          ${orderId ? `<code class="order-code">${escapeHtml(orderId)}</code>` : ''}
+          <div class="payment-result-actions">
+            <a href="./view-all.html" class="view-all-btn">Browse listings</a>
+            <a href="./chats.html" class="checkout-secondary">Open chats</a>
+          </div>
+        </section>
+      </main>
+    `);
+
+    if (isSuccess && orderId) updateCheckoutOrderStatus(orderId, 'pending_payment_setup');
+    initializeBrandThemeToggle();
+    updateWishlistBadge();
+    initializeQualityNavigation();
+}
+
 function getChats() {
     const remoteChats = getRemoteChats();
     const remoteProductIds = new Set(remoteChats.map((chat) => chat.productId));
@@ -1885,6 +1996,54 @@ async function addRemoteMessage(chatId, text, from = 'buyer') {
     }
 }
 
+async function createCheckoutOrder(product) {
+    const order = {
+        id: `local-order-${Date.now()}`,
+        session_id: getKidanSessionId(),
+        listing_id: product.id,
+        listing_title: product.title,
+        seller_name: product.seller || 'Seller',
+        amount: Number(product.price || 0),
+        currency: 'USD',
+        status: 'pending_payment_setup',
+        provider: 'manual_placeholder',
+        note: 'Stripe is not connected yet. Do not collect card data in the browser.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+
+    const client = await getSupabaseClient();
+    if (!client) return order;
+
+    try {
+        const { data, error } = await client
+            .from('orders')
+            .insert(order)
+            .select('id,session_id,listing_id,listing_title,seller_name,amount,currency,status,provider,note,created_at,updated_at')
+            .single();
+
+        if (!error && data) return data;
+    } catch (error) {}
+
+    return order;
+}
+
+async function updateCheckoutOrderStatus(orderId, status) {
+    if (!isSupabaseUuid(orderId)) return false;
+    const client = await getSupabaseClient();
+    if (!client) return false;
+
+    try {
+        const { error } = await client
+            .from('orders')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', orderId);
+        return !error;
+    } catch (error) {
+        return false;
+    }
+}
+
 function getOrCreateChat(productId) {
     const product = getProductById(productId);
     if (!product) return null;
@@ -2005,6 +2164,7 @@ function renderProductDetailPage() {
               <strong>${escapeHtml(product.seller || 'Seller')}</strong>
             </section>
             <div class="product-actions">
+              <a class="config-apply buy-now-btn" href="./checkout.html?id=${encodeURIComponent(product.id)}">Buy now</a>
               <button type="button" class="config-apply" id="contact-seller" data-product-id="${escapeHtml(product.id)}">Contact seller</button>
               <button type="button" class="item-like${getWishlistIds().includes(product.id) ? ' liked' : ''}" data-product-id="${escapeHtml(product.id)}" aria-label="Add to wishlist">${getWishlistIds().includes(product.id) ? '♥' : '♡'}</button>
             </div>

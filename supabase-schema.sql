@@ -82,6 +82,22 @@ create table if not exists public.support_messages (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid(),
+  session_id text not null,
+  listing_id text not null,
+  listing_title text not null,
+  seller_name text not null default 'Seller',
+  amount numeric(10,2) not null check (amount >= 0),
+  currency text not null default 'USD',
+  status text not null default 'pending_payment_setup',
+  provider text not null default 'manual_placeholder',
+  provider_session_id text,
+  note text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.listings to anon, authenticated;
 grant select, insert, update, delete on public.listing_photos to anon, authenticated;
@@ -90,6 +106,7 @@ grant select, insert, update, delete on public.chats to anon, authenticated;
 grant select, insert, update, delete on public.messages to anon, authenticated;
 grant select, insert, update, delete on public.support_threads to anon, authenticated;
 grant select, insert, update, delete on public.support_messages to anon, authenticated;
+grant select, insert, update on public.orders to anon, authenticated;
 
 alter table public.listings enable row level security;
 alter table public.listing_photos enable row level security;
@@ -98,6 +115,7 @@ alter table public.chats enable row level security;
 alter table public.messages enable row level security;
 alter table public.support_threads enable row level security;
 alter table public.support_messages enable row level security;
+alter table public.orders enable row level security;
 
 drop policy if exists "Listings are publicly readable" on public.listings;
 create policy "Listings are publicly readable"
@@ -189,6 +207,22 @@ with check (
   or (sender = 'agent' and auth.role() = 'authenticated')
 );
 
+drop policy if exists "Orders readable" on public.orders;
+create policy "Orders readable"
+on public.orders for select
+using (true);
+
+drop policy if exists "Orders insertable" on public.orders;
+create policy "Orders insertable"
+on public.orders for insert
+with check (status = 'pending_payment_setup');
+
+drop policy if exists "Orders updatable" on public.orders;
+create policy "Orders updatable"
+on public.orders for update
+using (true)
+with check (true);
+
 create index if not exists listings_brand_idx on public.listings (brand);
 create index if not exists listings_tag_idx on public.listings (tag);
 create index if not exists listing_photos_listing_id_idx on public.listing_photos (listing_id);
@@ -196,6 +230,9 @@ create index if not exists chats_session_id_idx on public.chats (session_id);
 create index if not exists messages_chat_id_idx on public.messages (chat_id);
 create index if not exists support_threads_session_id_idx on public.support_threads (session_id);
 create index if not exists support_messages_thread_id_idx on public.support_messages (thread_id);
+create index if not exists orders_session_id_idx on public.orders (session_id);
+create index if not exists orders_listing_id_idx on public.orders (listing_id);
+create index if not exists orders_status_idx on public.orders (status);
 
 drop policy if exists "Listing photos storage public read" on storage.objects;
 create policy "Listing photos storage public read"

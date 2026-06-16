@@ -2344,6 +2344,163 @@ kbd {
   max-height: 430px;
 }
 
+.checkout-main {
+  position: relative;
+  z-index: 2;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 64px;
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.checkout-summary,
+.checkout-panel,
+.payment-result-panel {
+  border: 1px solid rgba(139, 92, 246, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 44px rgba(31, 22, 61, 0.08);
+}
+
+.checkout-summary {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.checkout-summary img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 14px;
+  background: #f3efff;
+}
+
+.checkout-summary h1,
+.checkout-panel h2,
+.payment-result-panel h1 {
+  margin: 4px 0 8px;
+  color: #20123a;
+}
+
+.checkout-summary p,
+.checkout-copy,
+.payment-result-panel p {
+  color: #6b6478;
+  line-height: 1.6;
+}
+
+.checkout-totals {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.checkout-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.checkout-totals dt,
+.checkout-totals dd {
+  margin: 0;
+}
+
+.checkout-totals dt {
+  color: #6b6478;
+}
+
+.checkout-totals dd {
+  color: #20123a;
+  font-weight: 900;
+}
+
+.checkout-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.checkout-safety-list {
+  display: grid;
+  gap: 10px;
+}
+
+.checkout-safety-list div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8f5ff;
+}
+
+.checkout-safety-list strong {
+  color: #20123a;
+}
+
+.checkout-safety-list span {
+  color: #6b6478;
+  font-size: 14px;
+}
+
+.checkout-primary[disabled] {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.checkout-secondary,
+.buy-now-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.checkout-secondary {
+  width: fit-content;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: #5b21b6;
+  font-weight: 900;
+  background: #f6f1ff;
+}
+
+.payment-result-panel {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px;
+  text-align: center;
+}
+
+.order-code {
+  display: block;
+  width: 100%;
+  overflow-wrap: anywhere;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f6f1ff;
+  color: #4c1d95;
+}
+
+.payment-result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* ============================================
    ANIMATIONS — SKELETON
    ============================================ */
@@ -2716,6 +2873,15 @@ kbd {
         align-items: flex-start;
         flex-direction: column;
     }
+
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-panel,
+    .payment-result-panel {
+        padding: 20px;
+    }
 }
 
 /* ============================================
@@ -2857,6 +3023,9 @@ html[data-theme="dark"] .chat-thread,
 html[data-theme="dark"] .admin-support-shell,
 html[data-theme="dark"] .admin-auth-card,
 html[data-theme="dark"] .admin-otp-panel,
+html[data-theme="dark"] .checkout-summary,
+html[data-theme="dark"] .checkout-panel,
+html[data-theme="dark"] .payment-result-panel,
 html[data-theme="dark"] .empty-state,
 html[data-theme="dark"] .wishlist-empty {
     background: var(--color-card-bg);
@@ -2871,9 +3040,25 @@ html[data-theme="dark"] .admin-thread-item strong {
     color: var(--color-text-primary);
 }
 
+html[data-theme="dark"] .checkout-summary h1,
+html[data-theme="dark"] .checkout-panel h2,
+html[data-theme="dark"] .payment-result-panel h1,
+html[data-theme="dark"] .checkout-totals dd,
+html[data-theme="dark"] .checkout-safety-list strong {
+    color: var(--color-text-primary);
+}
+
 html[data-theme="dark"] .admin-muted,
 html[data-theme="dark"] .admin-status,
 html[data-theme="dark"] .admin-thread-item span {
+    color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .checkout-summary p,
+html[data-theme="dark"] .checkout-copy,
+html[data-theme="dark"] .payment-result-panel p,
+html[data-theme="dark"] .checkout-totals dt,
+html[data-theme="dark"] .checkout-safety-list span {
     color: var(--color-text-secondary);
 }
 
@@ -2889,6 +3074,13 @@ html[data-theme="dark"] .admin-thread-item:hover,
 html[data-theme="dark"] .admin-thread-item.active,
 html[data-theme="dark"] .admin-panel-head button {
     background: rgba(139, 92, 246, 0.16);
+}
+
+html[data-theme="dark"] .checkout-safety-list div,
+html[data-theme="dark"] .checkout-secondary,
+html[data-theme="dark"] .order-code {
+    background: rgba(139, 92, 246, 0.16);
+    color: #c4b5fd;
 }
 html[data-theme="dark"] .collection-card::before {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.16), rgba(255, 255, 255, 0.035));
