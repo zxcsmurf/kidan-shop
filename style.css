@@ -3083,6 +3083,39 @@ html[data-theme="dark"] .wishlist-empty {
     border-color: rgba(139, 92, 246, 0.22);
 }
 
+/* Keep marketplace cards white in every theme for logo/product readability. */
+html[data-theme="dark"] .category-card,
+html[data-theme="dark"] .independent-card,
+html[data-theme="dark"] .product-card,
+html[data-theme="dark"] .item-card,
+html[data-theme="dark"] .collection-card {
+    background: #ffffff;
+    border-color: rgba(139, 92, 246, 0.16);
+    box-shadow: 0 10px 30px rgba(17, 17, 17, 0.10);
+}
+
+html[data-theme="dark"] .card-logo-area,
+html[data-theme="dark"] .card-info,
+html[data-theme="dark"] .category-card:hover .card-info,
+html[data-theme="dark"] .item-card-empty .item-info {
+    background: #ffffff;
+    border-color: rgba(124, 58, 237, 0.08);
+}
+
+html[data-theme="dark"] .brand-name,
+html[data-theme="dark"] .item-name,
+html[data-theme="dark"] .item-price,
+html[data-theme="dark"] .product-card h3,
+html[data-theme="dark"] .product-card h3 a,
+html[data-theme="dark"] .product-bottom strong {
+    color: #111111;
+}
+
+html[data-theme="dark"] .product-meta,
+html[data-theme="dark"] .product-brand {
+    color: #6b6477;
+}
+
 html[data-theme="dark"] .admin-login-panel h2,
 html[data-theme="dark"] .admin-auth-card h3,
 html[data-theme="dark"] .admin-otp-panel h3,

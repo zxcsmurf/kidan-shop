@@ -53,6 +53,8 @@ function initializeThemeToggle() {
 
     // Works for any element marked as a theme toggle on any page
     document.querySelectorAll('#theme-toggle, [data-theme-toggle]').forEach((btn) => {
+        if (btn.dataset.kidanThemeReady === 'true') return;
+        btn.dataset.kidanThemeReady = 'true';
         btn.addEventListener('click', () => {
             const isDark = root.getAttribute('data-theme') === 'dark';
             if (isDark) {
@@ -2913,20 +2915,7 @@ function renderCollectionTabs(active) {
 }
 
 function initializeBrandThemeToggle() {
-    const root = document.documentElement;
-    const toggle = document.getElementById('theme-toggle');
-    if (!toggle) return;
-
-    toggle.addEventListener('click', () => {
-        const isDark = root.getAttribute('data-theme') === 'dark';
-        if (isDark) {
-            root.removeAttribute('data-theme');
-            try { localStorage.setItem('kidan-theme', 'light'); } catch (e) {}
-        } else {
-            root.setAttribute('data-theme', 'dark');
-            try { localStorage.setItem('kidan-theme', 'dark'); } catch (e) {}
-        }
-    });
+    initializeThemeToggle();
 }
 
 function initializeBrandConfigurator(brandName = '') {
