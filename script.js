@@ -985,13 +985,25 @@ function initializeImageFallbacks() {
 function prepareImage(image) {
     if (image.dataset.kidanImageReady === 'true') return;
     image.dataset.kidanImageReady = 'true';
-    image.loading = image.loading || 'lazy';
+    image.loading = image.loading || (isInlineImageSource(image.getAttribute('src')) ? 'eager' : 'lazy');
     image.decoding = 'async';
-    if (image.complete && image.naturalWidth === 0) replaceBrokenImage(image);
+    if (image.complete && image.naturalWidth === 0) scheduleBrokenImageCheck(image);
     image.addEventListener('error', () => replaceBrokenImage(image), { once: true });
 }
 
+function isInlineImageSource(src) {
+    return /^(data:image\/|blob:)/i.test(String(src || ''));
+}
+
+function scheduleBrokenImageCheck(image) {
+    window.setTimeout(() => {
+        if (!image.isConnected) return;
+        if (image.complete && image.naturalWidth === 0) replaceBrokenImage(image);
+    }, 2500);
+}
+
 function replaceBrokenImage(image) {
+    if (!image.isConnected) return;
     const alt = image.getAttribute('alt') || 'Kidan';
     const fallback = document.createElement('div');
     fallback.className = image.classList.contains('brand-logo-img')
