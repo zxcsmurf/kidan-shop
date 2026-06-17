@@ -3113,12 +3113,12 @@ html.motion-ready body {
 .motion-reveal {
     opacity: 0;
     transform: translateY(22px) scale(0.985);
-    filter: blur(4px);
+    filter: blur(3px);
     transition:
-        opacity 0.65s cubic-bezier(0.2, 0.8, 0.2, 1),
-        transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1),
-        filter 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
-    transition-delay: calc(var(--motion-index, 0) * 42ms);
+        opacity 0.46s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1),
+        filter 0.22s ease-out;
+    transition-delay: calc(var(--motion-index, 0) * 24ms);
 }
 
 .motion-reveal.motion-in {
