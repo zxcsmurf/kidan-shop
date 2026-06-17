@@ -88,15 +88,29 @@ create table if not exists public.orders (
   listing_id text not null,
   listing_title text not null,
   seller_name text not null default 'Seller',
+  buyer_user_id uuid,
+  buyer_email text not null default '',
   amount numeric(10,2) not null check (amount >= 0),
   currency text not null default 'USD',
   status text not null default 'pending_payment_setup',
   provider text not null default 'manual_placeholder',
   provider_session_id text,
+  delivery_region text not null default 'Europe',
+  delivery_method text not null default 'Provider pending',
+  delivery_status text not null default 'delivery_placeholder',
+  delivery_note text not null default 'Delivery service for Europe will be connected later.',
   note text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.orders
+  add column if not exists buyer_user_id uuid,
+  add column if not exists buyer_email text not null default '',
+  add column if not exists delivery_region text not null default 'Europe',
+  add column if not exists delivery_method text not null default 'Provider pending',
+  add column if not exists delivery_status text not null default 'delivery_placeholder',
+  add column if not exists delivery_note text not null default 'Delivery service for Europe will be connected later.';
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.listings to anon, authenticated;
@@ -107,7 +121,7 @@ grant select, insert, update, delete on public.messages to anon, authenticated;
 grant select, insert, update, delete on public.support_threads to anon, authenticated;
 grant select, insert, update, delete on public.support_messages to anon, authenticated;
 revoke all on public.orders from anon, authenticated;
-grant insert on public.orders to anon, authenticated;
+grant select, insert on public.orders to authenticated;
 grant select, insert, update on public.orders to service_role;
 
 alter table public.listings enable row level security;
@@ -212,7 +226,7 @@ with check (
 drop policy if exists "Orders readable" on public.orders;
 create policy "Orders readable"
 on public.orders for select
-using (auth.role() = 'service_role');
+using (auth.role() = 'service_role' or auth.uid() = buyer_user_id);
 
 drop policy if exists "Orders insertable" on public.orders;
 create policy "Orders insertable"
@@ -220,6 +234,8 @@ on public.orders for insert
 with check (
   status = 'pending_payment_setup'
   and provider = 'manual_placeholder'
+  and auth.role() = 'authenticated'
+  and auth.uid() = buyer_user_id
 );
 
 drop policy if exists "Orders updatable" on public.orders;
@@ -238,6 +254,8 @@ create index if not exists support_messages_thread_id_idx on public.support_mess
 create index if not exists orders_session_id_idx on public.orders (session_id);
 create index if not exists orders_listing_id_idx on public.orders (listing_id);
 create index if not exists orders_status_idx on public.orders (status);
+create index if not exists orders_buyer_user_id_idx on public.orders (buyer_user_id);
+create index if not exists orders_delivery_status_idx on public.orders (delivery_status);
 
 drop policy if exists "Listing photos storage public read" on storage.objects;
 create policy "Listing photos storage public read"

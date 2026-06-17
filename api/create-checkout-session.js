@@ -48,9 +48,15 @@ async function handleCheckout(req, res) {
   const orderId = String(body.orderId || '');
   const listingId = String(body.listingId || '');
   const sessionId = String(body.sessionId || '').slice(0, 120);
+  const accessToken = String(body.accessToken || '');
 
-  if (!UUID_RE.test(orderId) || !isSafeListingId(listingId) || !sessionId) {
+  if (!UUID_RE.test(orderId) || !isSafeListingId(listingId) || !sessionId || !accessToken) {
     return res.status(400).json({ error: 'Invalid checkout request.' });
+  }
+
+  const user = await fetchAuthenticatedUser(accessToken);
+  if (!user) {
+    return res.status(401).json({ error: 'Sign in again before opening Stripe Checkout.' });
   }
 
   const listing = await resolveListing(listingId);
@@ -61,6 +67,14 @@ async function handleCheckout(req, res) {
   const order = await fetchOrder(orderId);
   if (!order || order.session_id !== sessionId || order.listing_id !== listingId) {
     return res.status(400).json({ error: 'Order does not match this checkout request.' });
+  }
+
+  if (order.buyer_user_id && order.buyer_user_id !== user.id) {
+    return res.status(403).json({ error: 'This order belongs to a different signed-in account.' });
+  }
+
+  if (!['pending_payment_setup', 'stripe_checkout_created'].includes(order.status)) {
+    return res.status(409).json({ error: 'This order is not ready for checkout.' });
   }
 
   const amountInCents = Math.round(Number(listing.price) * 100);
@@ -126,6 +140,19 @@ async function fetchListing(listingId) {
 }
 
 async function fetchOrder(orderId) {
+  const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,session_id,listing_id,status,buyer_user_id,buyer_email&limit=1`, {
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+
+  if (!response.ok) return fetchLegacyOrder(orderId);
+  const rows = await response.json();
+  return Array.isArray(rows) ? rows[0] : null;
+}
+
+async function fetchLegacyOrder(orderId) {
   const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,session_id,listing_id,status&limit=1`, {
     headers: {
       apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -136,6 +163,19 @@ async function fetchOrder(orderId) {
   if (!response.ok) return null;
   const rows = await response.json();
   return Array.isArray(rows) ? rows[0] : null;
+}
+
+async function fetchAuthenticatedUser(accessToken) {
+  const apiKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) return null;
+  return response.json();
 }
 
 async function patchOrder(orderId, patch) {

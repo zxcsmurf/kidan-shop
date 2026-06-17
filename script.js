@@ -1275,7 +1275,13 @@ async function getSupabaseClient() {
         kidanSupabasePromise = loadExternalScript(KIDAN_SUPABASE_SCRIPT)
             .then(() => {
                 if (!window.supabase?.createClient) return null;
-                kidanSupabaseClient = window.supabase.createClient(KIDAN_SUPABASE_URL, KIDAN_SUPABASE_KEY);
+                kidanSupabaseClient = window.supabase.createClient(KIDAN_SUPABASE_URL, KIDAN_SUPABASE_KEY, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
+                    }
+                });
                 return kidanSupabaseClient;
             })
             .catch(() => null);
@@ -2157,6 +2163,33 @@ function renderWishlistPage() {
     initializeQualityNavigation();
 }
 
+function getDeliveryPlaceholder(order = {}) {
+    return {
+        region: order.delivery_region || 'Europe',
+        method: order.delivery_method || 'Provider pending',
+        status: order.delivery_status || 'delivery_placeholder',
+        note: order.delivery_note || 'Delivery service for Europe will be connected later.'
+    };
+}
+
+function renderDeliveryPlaceholder(order = {}) {
+    const delivery = getDeliveryPlaceholder(order);
+    return `
+      <section class="delivery-placeholder" aria-label="Delivery placeholder">
+        <div>
+          <span class="modal-eyebrow">Delivery placeholder</span>
+          <h3>Europe delivery will be connected later</h3>
+          <p>${escapeHtml(delivery.note)}</p>
+        </div>
+        <dl>
+          <div><dt>Region</dt><dd>${escapeHtml(delivery.region)}</dd></div>
+          <div><dt>Method</dt><dd>${escapeHtml(delivery.method)}</dd></div>
+          <div><dt>Status</dt><dd>${escapeHtml(delivery.status.replace(/_/g, ' '))}</dd></div>
+        </dl>
+      </section>
+    `;
+}
+
 async function renderCheckoutPage() {
     const page = document.querySelector('[data-checkout-page]');
     if (!page) return;
@@ -2212,6 +2245,8 @@ async function renderCheckoutPage() {
               <div><strong>Seller contact remains open</strong><span>Buyers can still message the seller while payment setup is pending.</span></div>
             </div>
 
+            ${renderDeliveryPlaceholder()}
+
             <button type="button" class="config-apply checkout-primary" id="checkout-placeholder-pay">Continue to secure checkout</button>
             <a class="checkout-secondary" href="./chats.html" id="checkout-chat-link">Go to chats</a>
             <p class="admin-muted" id="checkout-status"></p>
@@ -2255,6 +2290,7 @@ function renderPaymentResultPage() {
 
     const status = page.getAttribute('data-payment-status') || 'success';
     const orderId = new URLSearchParams(window.location.search).get('order') || '';
+    const order = getLocalOrder(orderId);
     const isSuccess = status === 'success';
     const title = isSuccess ? 'Pending order created' : 'Checkout cancelled';
     const customMessage = new URLSearchParams(window.location.search).get('message');
@@ -2270,6 +2306,7 @@ function renderPaymentResultPage() {
           <h1>${title}</h1>
           <p>${copy}</p>
           ${orderId ? `<code class="order-code">${escapeHtml(orderId)}</code>` : ''}
+          ${isSuccess ? renderDeliveryPlaceholder(order || {}) : ''}
           <div class="payment-result-actions">
             <a href="./view-all.html" class="view-all-btn">Browse listings</a>
             <a href="./chats.html" class="checkout-secondary">Open chats</a>
@@ -2420,46 +2457,104 @@ async function addRemoteMessage(chatId, text, from = 'buyer') {
     }
 }
 
+function getLocalOrders() {
+    try {
+        return JSON.parse(localStorage.getItem('kidanOrders') || '[]');
+    } catch (error) {
+        return [];
+    }
+}
+
+function setLocalOrders(orders) {
+    localStorage.setItem('kidanOrders', JSON.stringify(orders));
+}
+
+function rememberLocalOrder(order) {
+    const orders = getLocalOrders().filter((item) => item.id !== order.id);
+    orders.unshift(order);
+    setLocalOrders(orders.slice(0, 40));
+}
+
+function getLocalOrder(orderId) {
+    if (!orderId) return null;
+    return getLocalOrders().find((order) => order.id === orderId) || null;
+}
+
+function getLegacyOrderPayload(order) {
+    return {
+        id: order.id,
+        session_id: order.session_id,
+        listing_id: order.listing_id,
+        listing_title: order.listing_title,
+        seller_name: order.seller_name,
+        amount: order.amount,
+        currency: order.currency,
+        status: order.status,
+        provider: order.provider,
+        provider_session_id: order.provider_session_id || null,
+        note: order.note,
+        created_at: order.created_at,
+        updated_at: order.updated_at
+    };
+}
+
+async function insertCheckoutOrder(client, order) {
+    try {
+        const { error } = await client.from('orders').insert(order);
+        if (!error) return true;
+
+        const legacy = await client.from('orders').insert(getLegacyOrderPayload(order));
+        return !legacy.error;
+    } catch (error) {
+        return false;
+    }
+}
+
 async function createCheckoutOrder(product) {
     const orderId = crypto?.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${String(Date.now()).slice(-12).padStart(12, '0')}`;
+    const session = await getKidanAuthSession();
     const order = {
         id: orderId,
         session_id: getKidanSessionId(),
         listing_id: product.id,
         listing_title: product.title,
         seller_name: product.seller || 'Seller',
+        buyer_user_id: session?.user?.id || null,
+        buyer_email: session?.user?.email || session?.user?.phone || '',
         amount: Number(product.price || 0),
         currency: 'USD',
         status: 'pending_payment_setup',
         provider: 'manual_placeholder',
-        note: 'Stripe is not connected yet. Do not collect card data in the browser.',
+        provider_session_id: null,
+        delivery_region: 'Europe',
+        delivery_method: 'Provider pending',
+        delivery_status: 'delivery_placeholder',
+        delivery_note: 'Delivery service for Europe will be connected later.',
+        note: 'Stripe checkout order created. Delivery is a Europe placeholder until shipping integration is connected.',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     };
+    rememberLocalOrder(order);
 
     const client = await getSupabaseClient();
     if (!client) return order;
 
-    try {
-        const { data, error } = await client
-            .from('orders')
-            .insert(order);
-
-        if (!error) return order;
-    } catch (error) {}
+    await insertCheckoutOrder(client, order);
 
     return order;
 }
 
 async function createStripeCheckoutSession(product, order) {
     try {
+        const session = await getKidanAuthSession();
         const response = await fetch('/api/create-checkout-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 orderId: order.id,
                 listingId: product.id,
-                sessionId: order.session_id
+                sessionId: order.session_id,
+                accessToken: session?.access_token || ''
             })
         });
 
