@@ -1915,7 +1915,6 @@ function renderCollectionPage() {
             <div class="brand-mark" aria-hidden="true"><span>${escapeHtml(title.charAt(0).toUpperCase())}</span></div>
           </div>
         </section>
-        ${renderCollectionTabs(active)}
         <section class="collection-grid" id="collection-products" aria-label="${safeTitle}"></section>
       </main>
     `);
@@ -2899,19 +2898,6 @@ async function callSupportAdminApi(payload) {
     } catch (error) {
         return { ok: false, error: 'Support admin API is unavailable.' };
     }
-}
-
-function renderCollectionTabs(active) {
-    const tabs = [
-        ['all', 'All', './index.html'],
-        ['new', 'New', './new.html'],
-        ['used', 'Used', './used.html'],
-        ['sale', 'Sale', './sale.html']
-    ];
-
-    return `<nav class="collection-toolbar" aria-label="Listing filters">
-      ${tabs.map(([key, label, href]) => `<a class="collection-tab${key === active ? ' active' : ''}" href="${href}">${label}</a>`).join('')}
-    </nav>`;
 }
 
 function initializeBrandThemeToggle() {

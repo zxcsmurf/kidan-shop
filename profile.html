@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=20260617-profile-auth"/>
+  <link rel="stylesheet" href="style.css?v=20260617-auth-tabs"/>
   <script>
     // Apply saved theme before first paint (shared across all pages)
     (function () {
@@ -654,8 +654,8 @@
               <input type="password" id="auth-email-password" autocomplete="current-password" minlength="6" placeholder="Password" required>
             </label>
             <div class="profile-auth-actions">
-              <button type="submit" name="action" value="sign-in">Sign in</button>
-              <button type="submit" name="action" value="sign-up" class="secondary">Create account</button>
+              <button type="button" data-profile-email-auth="sign-in">Sign in</button>
+              <button type="button" data-profile-email-auth="sign-up" class="secondary">Create account</button>
             </div>
           </form>
 
@@ -668,8 +668,8 @@
               <input type="password" id="auth-phone-password" autocomplete="current-password" minlength="6" placeholder="Password" required>
             </label>
             <div class="profile-auth-actions">
-              <button type="submit" name="action" value="sign-in">Sign in</button>
-              <button type="submit" name="action" value="sign-up" class="secondary">Create account</button>
+              <button type="button" data-profile-phone-auth="sign-in">Sign in</button>
+              <button type="button" data-profile-phone-auth="sign-up" class="secondary">Create account</button>
             </div>
           </form>
         </div>
@@ -905,7 +905,7 @@
     </section>
   </div>
 
-  <script src="script.js?v=20260617-profile-auth"></script>
+  <script src="script.js?v=20260617-auth-tabs"></script>
   <script>
     let kidanProfileSession = null;
     const PROFILE_SUPABASE_URL = 'https://bissogumzvqklxttaqne.supabase.co';
@@ -969,49 +969,94 @@
     }
 
     function wireProfileAuthForms(client) {
-      document.getElementById('profile-email-auth')?.addEventListener('submit', async (event) => {
+      const emailForm = document.getElementById('profile-email-auth');
+      const phoneForm = document.getElementById('profile-phone-auth');
+      emailForm?.addEventListener('submit', (event) => {
         event.preventDefault();
-        const action = event.submitter?.value || 'sign-in';
+        runEmailAuth(client, 'sign-in');
+      });
+      phoneForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        runPhoneAuth(client, 'sign-in');
+      });
+      document.querySelectorAll('[data-profile-email-auth]').forEach((button) => {
+        button.addEventListener('click', () => runEmailAuth(client, button.getAttribute('data-profile-email-auth') || 'sign-in', button));
+      });
+      document.querySelectorAll('[data-profile-phone-auth]').forEach((button) => {
+        button.addEventListener('click', () => runPhoneAuth(client, button.getAttribute('data-profile-phone-auth') || 'sign-in', button));
+      });
+
+      document.getElementById('profile-google-auth')?.addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        setAuthStatus('Opening Google sign in...');
+        button.disabled = true;
+        const { error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: getProfileRedirectUrl() }
+        });
+        if (error) {
+          button.disabled = false;
+          setAuthStatus(error.message);
+        }
+      });
+    }
+
+    async function runEmailAuth(client, action, button) {
+      const form = document.getElementById('profile-email-auth');
+      try {
         const email = document.getElementById('auth-email').value.trim();
         const password = document.getElementById('auth-email-password').value;
         if (!email || !password) return setAuthStatus('Enter email and password.');
+        setAuthBusy(form, true, button);
         setAuthStatus(action === 'sign-up' ? 'Creating account...' : 'Signing in...');
         const response = action === 'sign-up'
           ? await client.auth.signUp({ email, password, options: { emailRedirectTo: getProfileRedirectUrl() } })
           : await client.auth.signInWithPassword({ email, password });
         handleAuthResponse(response, action === 'sign-up' ? 'Check your email to confirm the account, then return here.' : 'Signed in.');
-      });
+      } catch (error) {
+        setAuthStatus(error?.message || 'Email auth failed. Try again.');
+      } finally {
+        setAuthBusy(form, false);
+      }
+    }
 
-      document.getElementById('profile-phone-auth')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const action = event.submitter?.value || 'sign-in';
+    async function runPhoneAuth(client, action, button) {
+      const form = document.getElementById('profile-phone-auth');
+      try {
         const phone = document.getElementById('auth-phone').value.trim();
         const password = document.getElementById('auth-phone-password').value;
         if (!phone || !password) return setAuthStatus('Enter phone and password.');
         if (!phone.startsWith('+')) return setAuthStatus('Phone must include country code, for example +420...');
+        setAuthBusy(form, true, button);
         setAuthStatus(action === 'sign-up' ? 'Creating phone account...' : 'Signing in...');
         const response = action === 'sign-up'
           ? await client.auth.signUp({ phone, password, options: { channel: 'sms' } })
           : await client.auth.signInWithPassword({ phone, password });
         handleAuthResponse(response, action === 'sign-up' ? 'Account created. If SMS confirmation is enabled, check your phone.' : 'Signed in.');
-      });
+      } catch (error) {
+        setAuthStatus(error?.message || 'Phone auth failed. Try again.');
+      } finally {
+        setAuthBusy(form, false);
+      }
+    }
 
-      document.getElementById('profile-google-auth')?.addEventListener('click', async () => {
-        setAuthStatus('Opening Google sign in...');
-        const { error } = await client.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: getProfileRedirectUrl() }
-        });
-        if (error) setAuthStatus(error.message);
+    function setAuthBusy(form, busy, activeButton) {
+      form?.querySelectorAll('button').forEach((button) => {
+        button.disabled = busy;
+        if (busy) button.dataset.originalText = button.dataset.originalText || button.textContent;
+        button.textContent = busy && button === activeButton ? 'Please wait...' : (button.dataset.originalText || button.textContent);
       });
     }
 
     function handleAuthResponse(response, successMessage) {
       if (response?.error) {
         setAuthStatus(response.error.message);
+        showToast(response.error.message);
         return;
       }
       setAuthStatus(successMessage);
+      showToast(successMessage);
     }
 
     function getProfileRedirectUrl() {
