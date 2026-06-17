@@ -3038,6 +3038,346 @@ html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 .nav-badge.has-items { animation: badgePop 0.3s ease; }
 
 /* ============================================
+   MOTION SYSTEM
+   ============================================ */
+
+@keyframes pageSoftEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardShine {
+    from { transform: translateX(-75%) rotate(16deg); }
+    to { transform: translateX(75%) rotate(16deg); }
+}
+
+@keyframes buttonRipple {
+    from { opacity: 0.45; transform: translate(-50%, -50%) scale(0); }
+    to { opacity: 0; transform: translate(-50%, -50%) scale(18); }
+}
+
+@keyframes searchSuggestionIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modalRise {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes backdropIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fabBreathe {
+    0%, 100% { box-shadow: 0 14px 34px rgba(124, 58, 237, 0.34); }
+    50% { box-shadow: 0 18px 46px rgba(124, 58, 237, 0.52); }
+}
+
+@keyframes likeParticle {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    25% { opacity: 1; }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--particle-x)), calc(-50% + var(--particle-y))) scale(0.15);
+    }
+}
+
+@keyframes photoSwap {
+    0% { opacity: 1; transform: scale(1); filter: blur(0); }
+    42% { opacity: 0.28; transform: scale(0.985); filter: blur(3px); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes chatBubbleIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmerSweep {
+    from { transform: translateX(-120%); }
+    to { transform: translateX(120%); }
+}
+
+@keyframes activeTabPulse {
+    0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.30); }
+    100% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+}
+
+html.motion-ready body {
+    animation: pageSoftEnter 0.42s ease-out both;
+}
+
+.motion-reveal {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+    filter: blur(4px);
+    transition:
+        opacity 0.65s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1),
+        filter 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition-delay: calc(var(--motion-index, 0) * 42ms);
+}
+
+.motion-reveal.motion-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+}
+
+.category-card,
+.item-card,
+.product-card,
+.collection-card,
+.checkout-summary,
+.checkout-panel,
+.payment-result-panel,
+.wishlist-empty,
+.empty-state,
+.chat-list,
+.chat-thread {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.category-card.is-tilting {
+    transform: translateY(-7px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.category-card::after,
+.item-card::before,
+.product-card::before,
+.checkout-summary::before,
+.checkout-panel::before {
+    content: '';
+    position: absolute;
+    inset: -45%;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+    transform: translateX(-75%) rotate(16deg);
+}
+
+.item-card,
+.product-card,
+.checkout-summary,
+.checkout-panel {
+    position: relative;
+}
+
+.category-card:hover::after,
+.item-card:hover::before,
+.product-card:hover::before,
+.checkout-summary:hover::before,
+.checkout-panel:hover::before {
+    opacity: 1;
+    animation: cardShine 0.9s ease-out;
+}
+
+.product-condition,
+.item-badge-condition,
+.card-tag,
+.card-badge {
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.product-card:hover .product-condition,
+.item-card:hover .item-badge-condition,
+.category-card:hover .card-tag,
+.category-card:hover .card-badge {
+    transform: translateY(-2px);
+}
+
+.motion-ripple-source {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.motion-ripple-source.motion-rippling::after {
+    content: '';
+    position: absolute;
+    left: var(--ripple-x, 50%);
+    top: var(--ripple-y, 50%);
+    width: 10px;
+    height: 10px;
+    z-index: 0;
+    border-radius: 999px;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.42);
+    animation: buttonRipple 0.58s ease-out;
+}
+
+.nav-icon-btn.motion-rippling::after,
+.qbtn.motion-rippling::after,
+.view-all-btn.motion-rippling::after,
+.checkout-secondary.motion-rippling::after,
+.sort-btn.motion-rippling::after {
+    background: rgba(124, 58, 237, 0.18);
+}
+
+.qbtn.active {
+    animation: activeTabPulse 0.75s ease-out;
+}
+
+.nav-icon-btn svg,
+.theme-toggle svg {
+    transition: transform 0.28s ease, stroke 0.28s ease;
+}
+
+.nav-icon-btn:hover svg {
+    transform: translateY(-1px) scale(1.06);
+}
+
+.theme-toggle:hover svg {
+    transform: rotate(-14deg) scale(1.08);
+}
+
+html[data-theme="dark"] .theme-toggle:hover svg {
+    transform: rotate(14deg) scale(1.08);
+}
+
+.sell-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.sell-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 28px rgba(124, 58, 237, 0.34);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.sell-btn:hover::before {
+    opacity: 1;
+}
+
+.search-suggestions.is-open {
+    animation: searchSuggestionIn 0.2s ease-out both;
+}
+
+.search-suggestion {
+    opacity: 0;
+    animation: searchSuggestionIn 0.24s ease-out both;
+    animation-delay: calc(var(--motion-index, 0) * 34ms);
+}
+
+.listing-modal.is-open .modal-backdrop {
+    animation: backdropIn 0.22s ease-out both;
+}
+
+.listing-modal.is-open .listing-dialog {
+    animation: modalRise 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.support-fab {
+    animation: fabBreathe 3.4s ease-in-out infinite;
+}
+
+.support-widget.is-open .support-fab {
+    animation: none;
+}
+
+.support-widget.is-open .support-panel {
+    transform: translateY(0) scale(1);
+}
+
+.support-message,
+.chat-message {
+    animation: chatBubbleIn 0.28s ease-out both;
+}
+
+.chat-message:nth-child(2) { animation-delay: 45ms; }
+.chat-message:nth-child(3) { animation-delay: 90ms; }
+.chat-message:nth-child(4) { animation-delay: 135ms; }
+.chat-message:nth-child(n + 5) { animation-delay: 160ms; }
+
+.like-burst-host {
+    position: relative;
+    overflow: visible;
+}
+
+.like-particle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: #e53e3e;
+    pointer-events: none;
+    animation: likeParticle 0.62s ease-out forwards;
+    animation-delay: var(--particle-delay, 0ms);
+}
+
+.product-main-photo {
+    transition: filter 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.product-main-photo.is-changing {
+    animation: photoSwap 0.36s ease-out both;
+}
+
+.item-card-empty .item-img-wrap {
+    position: relative;
+}
+
+.item-card-empty .item-img-wrap::after,
+.collection-card::before {
+    background-size: 220% 100%;
+}
+
+.item-card-empty .item-img-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    animation: shimmerSweep 2.2s ease-in-out infinite;
+}
+
+.wishlist-empty::after,
+.empty-state::after,
+.payment-result-panel::after {
+    content: '';
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    right: 20px;
+    bottom: 20px;
+    border-radius: 22px;
+    border: 1px solid rgba(139, 92, 246, 0.16);
+    transform: rotate(14deg);
+    opacity: 0.36;
+    pointer-events: none;
+    animation: blobFlightB 9s ease-in-out infinite;
+}
+
+.wishlist-empty,
+.empty-state,
+.payment-result-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.checkout-primary:not([disabled]) {
+    box-shadow: 0 14px 34px rgba(124, 58, 237, 0.22);
+}
+
+.checkout-primary:not([disabled]):hover,
+.config-apply:hover,
+.modal-submit:hover {
+    transform: translateY(-2px);
+}
+
+/* ============================================
    DARK THEME
    ============================================ */
 

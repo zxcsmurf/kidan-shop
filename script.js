@@ -948,9 +948,11 @@ let kidanSupabasePromise = null;
 let kidanCurrentBrandName = '';
 let kidanCurrentCollectionState = null;
 let kidanCurrentProductId = '';
+let kidanRevealObserver = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeImageFallbacks();
+    initializeMotionSystem();
     wireBrandCardLinks();
     renderHomeProducts();
     initializeHeaderSearch();
@@ -968,6 +970,141 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeQualityNavigation();
     initializeSupabaseBackend();
 });
+
+function initializeMotionSystem(root = document) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.documentElement.classList.toggle('motion-reduced', reduceMotion);
+    document.documentElement.classList.add('motion-ready');
+    initializeScrollReveal(root, reduceMotion);
+    initializeMotionRipples(root);
+    initializeBrandCardTilt(root, reduceMotion);
+}
+
+function getMotionTargets(root, selector) {
+    const scope = root || document;
+    const matches = [];
+    if (scope !== document && scope.matches?.(selector)) matches.push(scope);
+    matches.push(...scope.querySelectorAll?.(selector) || []);
+    return [...new Set(matches)];
+}
+
+function initializeScrollReveal(root = document, reduceMotion = false) {
+    const selector = [
+        '.section-header',
+        '.brand-hero',
+        '.category-card',
+        '.item-card',
+        '.product-card',
+        '.collection-card',
+        '.product-gallery',
+        '.product-detail-panel',
+        '.brand-results-panel',
+        '.config-panel',
+        '.config-drawer-panel',
+        '.checkout-summary',
+        '.checkout-panel',
+        '.payment-result-panel',
+        '.wishlist-empty',
+        '.empty-state',
+        '.chat-list',
+        '.chat-thread',
+        '.admin-support-shell'
+    ].join(',');
+
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+        getMotionTargets(root, selector).forEach((node) => node.classList.add('motion-in'));
+        return;
+    }
+
+    if (!kidanRevealObserver) {
+        kidanRevealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('motion-in');
+                kidanRevealObserver.unobserve(entry.target);
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -64px 0px' });
+    }
+
+    getMotionTargets(root, selector).forEach((node, index) => {
+        if (node.dataset.motionReady === 'true') return;
+        node.dataset.motionReady = 'true';
+        node.style.setProperty('--motion-index', String(Math.min(index, 10)));
+        node.classList.add('motion-reveal');
+        kidanRevealObserver.observe(node);
+    });
+}
+
+function initializeMotionRipples(root = document) {
+    const selector = [
+        '.qbtn',
+        '.sell-btn',
+        '.nav-icon-btn',
+        '.search-submit-btn',
+        '.view-all-btn',
+        '.config-apply',
+        '.checkout-secondary',
+        '.modal-submit',
+        '.support-fab',
+        '.sort-btn'
+    ].join(',');
+
+    getMotionTargets(root, selector).forEach((node) => {
+        if (node.dataset.motionRippleReady === 'true') return;
+        node.dataset.motionRippleReady = 'true';
+        node.classList.add('motion-ripple-source');
+        node.addEventListener('pointerdown', (event) => {
+            const rect = node.getBoundingClientRect();
+            node.style.setProperty('--ripple-x', `${event.clientX - rect.left}px`);
+            node.style.setProperty('--ripple-y', `${event.clientY - rect.top}px`);
+            node.classList.remove('motion-rippling');
+            void node.offsetWidth;
+            node.classList.add('motion-rippling');
+        });
+        node.addEventListener('animationend', (event) => {
+            if (event.animationName === 'buttonRipple') node.classList.remove('motion-rippling');
+        });
+    });
+}
+
+function initializeBrandCardTilt(root = document, reduceMotion = false) {
+    if (reduceMotion || window.matchMedia('(max-width: 768px)').matches) return;
+
+    getMotionTargets(root, '.category-card').forEach((card) => {
+        if (card.dataset.motionTiltReady === 'true') return;
+        card.dataset.motionTiltReady = 'true';
+        card.addEventListener('pointermove', (event) => {
+            const rect = card.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width - 0.5) * 8;
+            const y = ((event.clientY - rect.top) / rect.height - 0.5) * -8;
+            card.style.setProperty('--tilt-x', `${y.toFixed(2)}deg`);
+            card.style.setProperty('--tilt-y', `${x.toFixed(2)}deg`);
+            card.classList.add('is-tilting');
+        });
+        card.addEventListener('pointerleave', () => {
+            card.classList.remove('is-tilting');
+            card.style.removeProperty('--tilt-x');
+            card.style.removeProperty('--tilt-y');
+        });
+    });
+}
+
+function playWishlistBurst(button) {
+    if (!button || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    button.classList.add('like-burst-host');
+    const particles = 7;
+    for (let i = 0; i < particles; i += 1) {
+        const particle = document.createElement('span');
+        particle.className = 'like-particle';
+        const angle = -110 + (220 / Math.max(1, particles - 1)) * i;
+        const distance = 18 + (i % 3) * 6;
+        particle.style.setProperty('--particle-x', `${Math.cos(angle * Math.PI / 180) * distance}px`);
+        particle.style.setProperty('--particle-y', `${Math.sin(angle * Math.PI / 180) * distance}px`);
+        particle.style.setProperty('--particle-delay', `${i * 18}ms`);
+        button.appendChild(particle);
+        particle.addEventListener('animationend', () => particle.remove(), { once: true });
+    }
+}
 
 function initializeImageFallbacks() {
     document.querySelectorAll('img').forEach(prepareImage);
@@ -1456,11 +1593,13 @@ function renderProductGrid(root, products, emptyMessage = 'No items match these 
             <a class="view-all-btn" href="./index.html">Back to shop</a>
           </div>
         `;
+        initializeMotionSystem(root);
         return;
     }
 
     root.innerHTML = products.map(renderProductCard).join('');
     initializeWishlistLinks(root);
+    initializeMotionSystem(root);
 }
 
 function renderHomeProducts() {
@@ -1542,11 +1681,12 @@ function initializeHeaderSearch() {
         const matches = [...brandMatches, ...productMatches].slice(0, 6);
         if (!matches.length) return;
 
-        matches.forEach((match) => {
+        matches.forEach((match, index) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'search-suggestion';
             button.setAttribute('role', 'option');
+            button.style.setProperty('--motion-index', String(index));
             button.innerHTML = `${escapeHtml(match.label)} <span>${escapeHtml(match.meta)}</span>`;
             button.addEventListener('click', match.action);
             suggestions.appendChild(button);
@@ -1595,13 +1735,19 @@ function initializeQualityNavigation() {
         used: './used.html',
         sale: './sale.html'
     };
+    const current = (window.location.pathname.split('/').pop() || 'index.html').replace('.html', '');
+    const activeKey = current === 'index' || !current ? 'all' : current;
 
     document.querySelectorAll('.qbtn').forEach((button) => {
+        button.classList.toggle('active', button.getAttribute('data-q') === activeKey);
+        if (button.dataset.qualityReady === 'true') return;
+        button.dataset.qualityReady = 'true';
         button.addEventListener('click', () => {
             const target = qPages[button.getAttribute('data-q')];
             if (target) window.location.href = target;
         });
     });
+    initializeMotionSystem();
 }
 
 function initializeWishlistLinks(root = document) {
@@ -1613,12 +1759,19 @@ function initializeWishlistLinks(root = document) {
     });
 
     root.querySelectorAll('.item-like').forEach((button, index) => {
+        if (button.dataset.wishlistReady === 'true') return;
+        button.dataset.wishlistReady = 'true';
         button.addEventListener('click', () => {
             const productId = button.getAttribute('data-product-id') || `item-${index + 1}`;
             toggleWishlistItem(productId);
-            button.classList.toggle('liked', getWishlistIds().includes(productId));
-            button.textContent = getWishlistIds().includes(productId) ? '♥' : '♡';
+            const isLiked = getWishlistIds().includes(productId);
+            button.classList.toggle('liked', isLiked);
+            button.textContent = isLiked ? '♥' : '♡';
             updateWishlistBadge();
+            button.classList.remove('pop');
+            void button.offsetWidth;
+            button.classList.add('pop');
+            if (isLiked) playWishlistBurst(button);
         });
     });
 }
@@ -2453,7 +2606,13 @@ function renderProductDetailPage() {
             button.classList.add('active');
             const photo = button.getAttribute('data-photo');
             const main = document.getElementById('product-main-photo');
-            if (main && photo) main.src = photo;
+            if (main && photo && main.getAttribute('src') !== photo) {
+                main.classList.remove('is-changing');
+                void main.offsetWidth;
+                main.classList.add('is-changing');
+                window.setTimeout(() => { main.src = photo; }, 90);
+                window.setTimeout(() => { main.classList.remove('is-changing'); }, 360);
+            }
         });
     });
 
