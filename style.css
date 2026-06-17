@@ -52,7 +52,16 @@ html { scroll-behavior: smooth; }
 body {
     font-family: var(--font-body);
     color: var(--color-text-primary);
-    background-color: var(--color-bg);
+    background:
+        linear-gradient(
+            180deg,
+            var(--color-bg) 0%,
+            #fbfaff 24%,
+            #f6f1ff 50%,
+            #ffffff 76%,
+            #f8f5ff 100%
+        );
+    background-attachment: scroll;
     line-height: 1.6;
     position: relative;
     overflow-x: hidden;
@@ -489,8 +498,8 @@ nav.filter-bar {
     background: #7c3aed;
     pointer-events: all;
     cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.35);
+    border: 2px solid rgba(124, 58, 237, 0.24);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18);
     transition: transform 0.15s;
 }
 
@@ -503,8 +512,8 @@ nav.filter-bar {
     background: #7c3aed;
     pointer-events: all;
     cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.35);
+    border: 2px solid rgba(124, 58, 237, 0.24);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18);
 }
 
 .range-track {
@@ -637,7 +646,7 @@ nav.filter-bar {
 
 .category-card {
     background: #fff;
-    border: 1.5px solid var(--color-card-border);
+    border: 1.5px solid rgba(139, 92, 246, 0.14);
     border-radius: 16px;
     cursor: pointer;
     transition: border-color var(--transition-base),
@@ -2776,11 +2785,12 @@ kbd {
    ============================================ */
 
 #bg-patterns {
-    position: fixed;
+    position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
+    min-height: 100%;
 }
 
 .bp { position: absolute; }
@@ -2981,7 +2991,18 @@ html[data-theme="dark"] {
     --color-badge-text: #c4b5fd;
 }
 
-html[data-theme="dark"] body { background-color: var(--color-bg); }
+html[data-theme="dark"] body {
+    background:
+        linear-gradient(
+            180deg,
+            #14101f 0%,
+            #1b1530 28%,
+            #241c3a 54%,
+            #171226 78%,
+            #100c1a 100%
+        );
+    background-attachment: scroll;
+}
 
 html[data-theme="dark"] nav.filter-bar {
     background: rgba(20, 16, 31, 0.92);
@@ -3090,8 +3111,8 @@ html[data-theme="dark"] .product-card,
 html[data-theme="dark"] .item-card,
 html[data-theme="dark"] .collection-card {
     background: #ffffff;
-    border-color: rgba(139, 92, 246, 0.16);
-    box-shadow: 0 10px 30px rgba(17, 17, 17, 0.10);
+    border-color: rgba(139, 92, 246, 0.22);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
 }
 
 html[data-theme="dark"] .card-logo-area,
@@ -3099,7 +3120,7 @@ html[data-theme="dark"] .card-info,
 html[data-theme="dark"] .category-card:hover .card-info,
 html[data-theme="dark"] .item-card-empty .item-info {
     background: #ffffff;
-    border-color: rgba(124, 58, 237, 0.08);
+    border-color: rgba(124, 58, 237, 0.10);
 }
 
 html[data-theme="dark"] .brand-name,

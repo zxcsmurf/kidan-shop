@@ -437,8 +437,9 @@ function initializeListingModal() {
     const openers = document.querySelectorAll('[data-open-listing]');
     const closers = document.querySelectorAll('[data-close-listing]');
 
-    function openModal(event) {
+    async function openModal(event) {
         if (event) event.preventDefault();
+        if (!(await requireKidanAuth('sell an item'))) return;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('modal-open');
@@ -1143,6 +1144,41 @@ async function getSupabaseClient() {
             .catch(() => null);
     }
     return kidanSupabasePromise;
+}
+
+async function getKidanAuthSession() {
+    const client = await getSupabaseClient();
+    if (!client?.auth?.getSession) return null;
+    try {
+        const { data, error } = await client.auth.getSession();
+        if (error) return null;
+        return data?.session || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+function getAuthReturnPath() {
+    return `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
+}
+
+function getAuthGateUrl() {
+    return `./profile.html?next=${encodeURIComponent(getAuthReturnPath())}`;
+}
+
+async function requireKidanAuth(actionLabel = 'continue') {
+    const session = await getKidanAuthSession();
+    if (session?.user) return true;
+
+    try {
+        sessionStorage.setItem('kidanAuthReturnTo', getAuthReturnPath());
+    } catch (error) {
+        /* Ignore storage failures; the profile page still opens. */
+    }
+
+    showGlobalToast(`Sign in to ${actionLabel}.`);
+    window.location.href = getAuthGateUrl();
+    return false;
 }
 
 function normalizeRemoteListing(row) {
@@ -1968,9 +2004,10 @@ function renderWishlistPage() {
     initializeQualityNavigation();
 }
 
-function renderCheckoutPage() {
+async function renderCheckoutPage() {
     const page = document.querySelector('[data-checkout-page]');
     if (!page) return;
+    if (!(await requireKidanAuth('buy this item'))) return;
 
     const productId = new URLSearchParams(window.location.search).get('id');
     const product = getProductById(productId);
@@ -2023,7 +2060,7 @@ function renderCheckoutPage() {
             </div>
 
             <button type="button" class="config-apply checkout-primary" id="checkout-placeholder-pay">Continue to secure checkout</button>
-            <a class="checkout-secondary" href="./chats.html">Go to chats</a>
+            <a class="checkout-secondary" href="./chats.html" id="checkout-chat-link">Go to chats</a>
             <p class="admin-muted" id="checkout-status"></p>
           </section>
         </section>
@@ -2046,6 +2083,12 @@ function renderCheckoutPage() {
 
         const fallback = checkout?.message || 'Stripe is not configured yet. The order was saved as pending and no money was charged.';
         window.location.href = './payment-success.html?order=' + encodeURIComponent(order.id) + '&placeholder=1&message=' + encodeURIComponent(fallback);
+    });
+
+    document.getElementById('checkout-chat-link')?.addEventListener('click', async (event) => {
+        event.preventDefault();
+        if (!(await requireKidanAuth('open chats'))) return;
+        window.location.href = event.currentTarget.href;
     });
 
     initializeBrandThemeToggle();
@@ -2395,7 +2438,7 @@ function renderProductDetailPage() {
               <strong>${escapeHtml(product.seller || 'Seller')}</strong>
             </section>
             <div class="product-actions">
-              <a class="config-apply buy-now-btn" href="./checkout.html?id=${encodeURIComponent(product.id)}">Buy now</a>
+              <a class="config-apply buy-now-btn" id="buy-now-link" href="./checkout.html?id=${encodeURIComponent(product.id)}">Buy now</a>
               <button type="button" class="config-apply" id="contact-seller" data-product-id="${escapeHtml(product.id)}">Contact seller</button>
               <button type="button" class="item-like${getWishlistIds().includes(product.id) ? ' liked' : ''}" data-product-id="${escapeHtml(product.id)}" aria-label="Add to wishlist">${getWishlistIds().includes(product.id) ? '♥' : '♡'}</button>
             </div>
@@ -2414,7 +2457,14 @@ function renderProductDetailPage() {
         });
     });
 
+    document.getElementById('buy-now-link')?.addEventListener('click', async (event) => {
+        event.preventDefault();
+        if (!(await requireKidanAuth('buy this item'))) return;
+        window.location.href = event.currentTarget.href;
+    });
+
     document.getElementById('contact-seller')?.addEventListener('click', async () => {
+        if (!(await requireKidanAuth('message the seller'))) return;
         let chat = isSupabaseUuid(product.id) ? await createRemoteChat(product.id) : null;
         if (!chat) chat = getOrCreateChat(product.id);
         if (chat) window.location.href = './chats.html?chat=' + encodeURIComponent(chat.id);
@@ -2426,9 +2476,10 @@ function renderProductDetailPage() {
     initializeQualityNavigation();
 }
 
-function renderChatsPage() {
+async function renderChatsPage() {
     const page = document.querySelector('[data-chats-page]');
     if (!page) return;
+    if (!(await requireKidanAuth('open chats'))) return;
 
     const chatId = new URLSearchParams(window.location.search).get('chat');
     const chats = getChats();

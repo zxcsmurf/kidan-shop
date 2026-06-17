@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=20260617-auth-tabs"/>
+  <link rel="stylesheet" href="style.css?v=20260617-auth-gates"/>
   <script>
     // Apply saved theme before first paint (shared across all pages)
     (function () {
@@ -906,7 +906,7 @@
     </section>
   </div>
 
-  <script src="script.js?v=20260617-auth-tabs"></script>
+  <script src="script.js?v=20260617-auth-gates"></script>
   <script>
     let kidanProfileSession = null;
     const PROFILE_SUPABASE_URL = 'https://bissogumzvqklxttaqne.supabase.co';
@@ -1079,10 +1079,33 @@
       }
       setAuthStatus(successMessage);
       showToast(successMessage);
+      if (response?.data?.session) redirectAfterAuthIfNeeded();
     }
 
     function getProfileRedirectUrl() {
       return `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function getPendingAuthRedirect() {
+      const params = new URLSearchParams(window.location.search);
+      const rawNext = params.get('next') || sessionStorage.getItem('kidanAuthReturnTo') || '';
+      if (!rawNext) return '';
+      let url;
+      try {
+        url = new URL(rawNext, window.location.origin);
+      } catch (error) {
+        return '';
+      }
+      if (url.origin !== window.location.origin || url.pathname.endsWith('/profile.html')) return '';
+      return `${url.pathname}${url.search}${url.hash}`;
+    }
+
+    function redirectAfterAuthIfNeeded() {
+      const next = getPendingAuthRedirect();
+      if (!next) return false;
+      sessionStorage.removeItem('kidanAuthReturnTo');
+      window.location.href = next;
+      return true;
     }
 
     function applyProfileSession(session) {
@@ -1093,6 +1116,7 @@
       if (isSignedIn) {
         hydrateProfile(session.user);
         setAuthStatus('');
+        redirectAfterAuthIfNeeded();
       } else {
         setAuthStatus('Sign in or create an account to open your profile.');
       }
