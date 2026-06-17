@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=20260616-vans-theme"/>
+  <link rel="stylesheet" href="style.css?v=20260617-profile-auth"/>
   <script>
     // Apply saved theme before first paint (shared across all pages)
     (function () {
@@ -79,7 +79,7 @@
       height: 96px;
       border-radius: 50%;
       border: 3px solid rgba(139, 92, 246, 0.25);
-      background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,8 +92,8 @@
     .avatar-placeholder:hover { border-color: #7c3aed; }
 
     .avatar-placeholder svg {
-      color: #7c3aed;
-      opacity: 0.5;
+      color: #fff;
+      opacity: 0.72;
     }
 
     .avatar-placeholder img {
@@ -387,6 +387,193 @@
     html[data-theme="dark"] .btn-secondary { color: #a99fbb; }
     html[data-theme="dark"] .danger-text { color: #a99fbb; }
     html[data-theme="dark"] .btn-danger:hover { background: rgba(239, 68, 68, 0.12); }
+    .profile-auth {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-auth-card {
+      background: #fff;
+      border: 1px solid rgba(139, 92, 246, 0.13);
+      border-radius: 22px;
+      padding: 34px;
+      box-shadow: 0 18px 48px rgba(17, 17, 17, 0.06);
+    }
+
+    .profile-auth-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .profile-auth-head h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(34px, 7vw, 62px);
+      line-height: 0.95;
+      color: #111;
+      margin: 0 0 10px;
+    }
+
+    .profile-auth-head p,
+    .profile-auth-note,
+    .profile-auth-status {
+      color: #6b6477;
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .profile-auth-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 22px 0 18px;
+    }
+
+    .profile-auth-form {
+      border: 1px solid rgba(124, 58, 237, 0.14);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fbfaff;
+    }
+
+    .profile-auth-form h2 {
+      font-size: 15px;
+      color: #111;
+      margin: 0 0 14px;
+    }
+
+    .profile-auth-form label {
+      display: grid;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .profile-auth-form input {
+      font: inherit;
+      color: #111;
+      background: #fff;
+      border: 1.5px solid rgba(139, 92, 246, 0.18);
+      border-radius: 11px;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    .profile-auth-form input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+    }
+
+    .profile-auth-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .profile-auth-actions button,
+    .google-auth-btn {
+      min-height: 44px;
+      border: 0;
+      border-radius: 12px;
+      background: #7c3aed;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+    }
+
+    .profile-auth-actions button:hover,
+    .google-auth-btn:hover {
+      background: #6d28d9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(124, 58, 237, 0.20);
+    }
+
+    .profile-auth-actions button.secondary {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .google-auth-btn {
+      width: 100%;
+      background: #111;
+    }
+
+    .profile-auth-form input:disabled,
+    .profile-auth-actions button:disabled,
+    .google-auth-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .profile-auth-status {
+      min-height: 22px;
+      margin-top: 12px;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .profile-auth-grid { grid-template-columns: 1fr; }
+      .profile-auth-card { padding: 24px; }
+      .profile-auth-head { display: block; }
+    }
+
+    html[data-theme="dark"] .profile-auth-card { background: #1b1530; border-color: rgba(139, 92, 246, 0.22); }
+    html[data-theme="dark"] .profile-auth-head h1,
+    html[data-theme="dark"] .profile-auth-form h2 { color: #f3f0fb; }
+    html[data-theme="dark"] .profile-auth-head p,
+    html[data-theme="dark"] .profile-auth-note { color: #a99fbb; }
+    html[data-theme="dark"] .profile-auth-form { background: #241c3a; border-color: rgba(139, 92, 246, 0.24); }
+    html[data-theme="dark"] .profile-auth-form label { color: #cabfe0; }
+    html[data-theme="dark"] .profile-auth-form input { background: #1b1530; color: #f3f0fb; border-color: rgba(139, 92, 246, 0.28); }
+
+    html[data-theme="dark"] .p-card,
+    html[data-theme="dark"] .pstat,
+    html[data-theme="dark"] .profile-auth-card,
+    html[data-theme="dark"] .profile-auth-form {
+      background: #fff;
+      color: #111;
+      border-color: rgba(139, 92, 246, 0.14);
+    }
+
+    html[data-theme="dark"] .avatar-info h2,
+    html[data-theme="dark"] .profile-auth-head h1,
+    html[data-theme="dark"] .profile-auth-form h2 {
+      color: #111;
+    }
+
+    html[data-theme="dark"] .avatar-info p,
+    html[data-theme="dark"] .profile-auth-head p,
+    html[data-theme="dark"] .profile-auth-note,
+    html[data-theme="dark"] .danger-text {
+      color: #6b6477;
+    }
+
+    html[data-theme="dark"] .field label,
+    html[data-theme="dark"] .profile-auth-form label {
+      color: #374151;
+    }
+
+    html[data-theme="dark"] .field input,
+    html[data-theme="dark"] .field textarea,
+    html[data-theme="dark"] .field select,
+    html[data-theme="dark"] .profile-auth-form input {
+      background: #fff;
+      color: #111;
+      border-color: rgba(139, 92, 246, 0.18);
+    }
   </style>
 </head>
 <body>
@@ -446,7 +633,53 @@
 
   <!-- Main -->
   <main>
-    <div class="profile-wrap">
+    <section class="profile-auth" id="profile-auth">
+      <div class="profile-auth-card">
+        <div class="profile-auth-head">
+          <div>
+            <p class="p-card-title">Secure profile</p>
+            <h1>Sign in to Kidan</h1>
+            <p>Your profile, listings, wishlist, chats, and payments stay connected to your account.</p>
+          </div>
+          <button type="button" class="google-auth-btn" id="profile-google-auth">Continue with Google</button>
+        </div>
+
+        <div class="profile-auth-grid">
+          <form class="profile-auth-form" id="profile-email-auth">
+            <h2>Email and password</h2>
+            <label>Email
+              <input type="email" id="auth-email" autocomplete="email" placeholder="you@example.com" required>
+            </label>
+            <label>Password
+              <input type="password" id="auth-email-password" autocomplete="current-password" minlength="6" placeholder="Password" required>
+            </label>
+            <div class="profile-auth-actions">
+              <button type="submit" name="action" value="sign-in">Sign in</button>
+              <button type="submit" name="action" value="sign-up" class="secondary">Create account</button>
+            </div>
+          </form>
+
+          <form class="profile-auth-form" id="profile-phone-auth">
+            <h2>Phone and password</h2>
+            <label>Phone
+              <input type="tel" id="auth-phone" autocomplete="tel" placeholder="+420..." required>
+            </label>
+            <label>Password
+              <input type="password" id="auth-phone-password" autocomplete="current-password" minlength="6" placeholder="Password" required>
+            </label>
+            <div class="profile-auth-actions">
+              <button type="submit" name="action" value="sign-in">Sign in</button>
+              <button type="submit" name="action" value="sign-up" class="secondary">Create account</button>
+            </div>
+          </form>
+        </div>
+
+        <p class="profile-auth-note">Kidan keeps you signed in with a secure Supabase session. Raw passwords are never saved in this site.</p>
+        <p class="profile-auth-status" id="profile-auth-status">Checking session...</p>
+      </div>
+    </section>
+
+    <div class="profile-wrap" id="profile-shell" hidden>
 
       <!-- Stats -->
       <div class="profile-stats">
@@ -531,6 +764,7 @@
             Save Changes
           </button>
           <button class="btn-secondary" onclick="resetProfile()">Discard</button>
+          <button class="btn-secondary" type="button" id="profile-sign-out">Sign out</button>
         </div>
       </div>
 
@@ -603,7 +837,7 @@
       <div class="p-card danger-zone">
         <div class="p-card-title">Danger Zone</div>
         <p class="danger-text">Deleting your account is permanent. All of your listings, messages, and reviews will be removed.</p>
-        <button class="btn-danger">Delete Account</button>
+        <button class="btn-danger" type="button">Delete Account</button>
       </div>
 
     </div>
@@ -671,46 +905,254 @@
     </section>
   </div>
 
-  <script src="script.js?v=20260616-vans-theme"></script>
+  <script src="script.js?v=20260617-profile-auth"></script>
   <script>
-    /* ── AVATAR UPLOAD ── */
-    document.getElementById('avatar-input').addEventListener('change', function () {
-      const file = this.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = document.getElementById('avatarPreview');
-        img.src = e.target.result;
-        img.classList.add('loaded');
-        // hide placeholder icon
-        document.querySelector('#avatarCircle svg').style.display = 'none';
-      };
-      reader.readAsDataURL(file);
+    let kidanProfileSession = null;
+    const PROFILE_SUPABASE_URL = 'https://bissogumzvqklxttaqne.supabase.co';
+    const PROFILE_SUPABASE_KEY = 'sb_publishable_WnWEryXFZUjKy45NjK6TBA_Vvc07rKT';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeProfileAuthGate();
+      initializeProfileAvatar();
+      document.getElementById('profile-sign-out')?.addEventListener('click', signOutProfile);
     });
 
-    /* ── SAVE PROFILE ── */
-    function saveProfile() {
-      const first = document.getElementById('first-name').value.trim();
-      const last  = document.getElementById('last-name').value.trim();
-      const user  = document.getElementById('username').value.trim();
-      const email = document.getElementById('email').value.trim();
-
-      const displayName = [first, last].filter(Boolean).join(' ') || user || 'Your name';
-      document.getElementById('display-name').textContent = displayName;
-      if (email) document.getElementById('display-email').textContent = email;
-
-      showToast('Profile saved');
+    function profileStorageKey(userId) {
+      return `kidanProfile:${userId || 'guest'}`;
     }
 
-    /* ── RESET ── */
-    function resetProfile() {
-      ['first-name','last-name','username','phone','bio'].forEach(id => {
-        document.getElementById(id).value = '';
+    function getProfileDraft(userId) {
+      try { return JSON.parse(localStorage.getItem(profileStorageKey(userId)) || '{}'); }
+      catch (e) { return {}; }
+    }
+
+    function setProfileDraft(userId, data) {
+      try { localStorage.setItem(profileStorageKey(userId), JSON.stringify(data)); }
+      catch (e) {}
+    }
+
+    async function initializeProfileAuthGate() {
+      const client = await getSupabaseClient();
+      if (!client) {
+        setAuthStatus('Supabase is unavailable. Check your connection and Vercel environment.');
+        return;
+      }
+
+      applyAuthProviderSettings();
+      wireProfileAuthForms(client);
+      const { data } = await client.auth.getSession();
+      applyProfileSession(data?.session || null);
+      client.auth.onAuthStateChange((_event, session) => applyProfileSession(session));
+    }
+
+    async function applyAuthProviderSettings() {
+      try {
+        const response = await fetch(`${PROFILE_SUPABASE_URL}/auth/v1/settings`, {
+          headers: { apikey: PROFILE_SUPABASE_KEY }
+        });
+        if (!response.ok) return;
+        const settings = await response.json();
+        if (settings?.external?.google === false) {
+          const googleButton = document.getElementById('profile-google-auth');
+          googleButton.disabled = true;
+          googleButton.textContent = 'Google disabled in Supabase';
+          googleButton.title = 'Enable Google in Supabase Auth providers before using this button.';
+        }
+        if (settings?.external?.phone === false) {
+          document.querySelectorAll('#profile-phone-auth input, #profile-phone-auth button').forEach((node) => {
+            node.disabled = true;
+          });
+          const phoneHeading = document.querySelector('#profile-phone-auth h2');
+          if (phoneHeading) phoneHeading.textContent = 'Phone auth disabled in Supabase';
+        }
+      } catch (e) {}
+    }
+
+    function wireProfileAuthForms(client) {
+      document.getElementById('profile-email-auth')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const action = event.submitter?.value || 'sign-in';
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-email-password').value;
+        if (!email || !password) return setAuthStatus('Enter email and password.');
+        setAuthStatus(action === 'sign-up' ? 'Creating account...' : 'Signing in...');
+        const response = action === 'sign-up'
+          ? await client.auth.signUp({ email, password, options: { emailRedirectTo: getProfileRedirectUrl() } })
+          : await client.auth.signInWithPassword({ email, password });
+        handleAuthResponse(response, action === 'sign-up' ? 'Check your email to confirm the account, then return here.' : 'Signed in.');
       });
+
+      document.getElementById('profile-phone-auth')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const action = event.submitter?.value || 'sign-in';
+        const phone = document.getElementById('auth-phone').value.trim();
+        const password = document.getElementById('auth-phone-password').value;
+        if (!phone || !password) return setAuthStatus('Enter phone and password.');
+        if (!phone.startsWith('+')) return setAuthStatus('Phone must include country code, for example +420...');
+        setAuthStatus(action === 'sign-up' ? 'Creating phone account...' : 'Signing in...');
+        const response = action === 'sign-up'
+          ? await client.auth.signUp({ phone, password, options: { channel: 'sms' } })
+          : await client.auth.signInWithPassword({ phone, password });
+        handleAuthResponse(response, action === 'sign-up' ? 'Account created. If SMS confirmation is enabled, check your phone.' : 'Signed in.');
+      });
+
+      document.getElementById('profile-google-auth')?.addEventListener('click', async () => {
+        setAuthStatus('Opening Google sign in...');
+        const { error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: getProfileRedirectUrl() }
+        });
+        if (error) setAuthStatus(error.message);
+      });
+    }
+
+    function handleAuthResponse(response, successMessage) {
+      if (response?.error) {
+        setAuthStatus(response.error.message);
+        return;
+      }
+      setAuthStatus(successMessage);
+    }
+
+    function getProfileRedirectUrl() {
+      return `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function applyProfileSession(session) {
+      kidanProfileSession = session;
+      const isSignedIn = Boolean(session?.user);
+      document.getElementById('profile-auth').hidden = isSignedIn;
+      document.getElementById('profile-shell').hidden = !isSignedIn;
+      if (isSignedIn) {
+        hydrateProfile(session.user);
+        setAuthStatus('');
+      } else {
+        setAuthStatus('Sign in or create an account to open your profile.');
+      }
+    }
+
+    function hydrateProfile(user) {
+      const meta = user.user_metadata || {};
+      const draft = getProfileDraft(user.id);
+      const data = { ...meta, ...draft };
+      setValue('first-name', data.firstName || data.first_name || '');
+      setValue('last-name', data.lastName || data.last_name || '');
+      setValue('username', data.username || '');
+      setValue('phone', data.phone || user.phone || '');
+      setValue('bio', data.bio || '');
+      setValue('city', data.city || '');
+      setValue('region', data.region || '');
+      setValue('email', user.email || data.email || '');
+      updateProfileDisplay();
+      if (data.avatarDataUrl) setAvatarPreview(data.avatarDataUrl);
+    }
+
+    function initializeProfileAvatar() {
+      document.getElementById('avatar-input')?.addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const dataUrl = event.target.result;
+          setAvatarPreview(dataUrl);
+          const userId = kidanProfileSession?.user?.id;
+          const draft = getProfileDraft(userId);
+          setProfileDraft(userId, { ...draft, avatarDataUrl: dataUrl });
+          showToast('Avatar saved on this device');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function setAvatarPreview(src) {
+      const img = document.getElementById('avatarPreview');
+      if (!img) return;
+      img.src = src;
+      img.classList.add('loaded');
+      const icon = document.querySelector('#avatarCircle svg');
+      if (icon) icon.style.display = 'none';
+    }
+
+    async function saveProfile() {
+      const user = kidanProfileSession?.user;
+      if (!user) return setAuthStatus('Sign in first.');
+      const draft = collectProfileDraft();
+      setProfileDraft(user.id, draft);
+      updateProfileDisplay();
+
+      const client = await getSupabaseClient();
+      const updates = { data: {
+        firstName: draft.firstName,
+        lastName: draft.lastName,
+        username: draft.username,
+        phone: draft.phone,
+        bio: draft.bio,
+        city: draft.city,
+        region: draft.region
+      }};
+
+      const newEmail = document.getElementById('email').value.trim();
+      const newPassword = document.getElementById('new-password').value;
+      if (newEmail && newEmail !== user.email) updates.email = newEmail;
+      if (newPassword) {
+        if (newPassword.length < 8) return showToast('Password must be at least 8 characters');
+        updates.password = newPassword;
+      }
+
+      const { error } = await client.auth.updateUser(updates);
+      if (error) return showToast(error.message);
+      document.getElementById('new-password').value = '';
+      showToast(updates.email ? 'Profile saved. Confirm the new email if Supabase asks.' : 'Profile saved');
+    }
+
+    function collectProfileDraft() {
+      return {
+        firstName: getValue('first-name'),
+        lastName: getValue('last-name'),
+        username: getValue('username'),
+        phone: getValue('phone'),
+        bio: getValue('bio'),
+        city: getValue('city'),
+        region: getValue('region')
+      };
+    }
+
+    function updateProfileDisplay() {
+      const first = getValue('first-name');
+      const last = getValue('last-name');
+      const username = getValue('username');
+      const email = getValue('email') || kidanProfileSession?.user?.email || kidanProfileSession?.user?.phone || 'Signed in';
+      document.getElementById('display-name').textContent = [first, last].filter(Boolean).join(' ') || username || 'Your name';
+      document.getElementById('display-email').textContent = email;
+    }
+
+    function resetProfile() {
+      ['first-name','last-name','username','phone','bio','city','region','new-password'].forEach(id => setValue(id, ''));
+      updateProfileDisplay();
       showToast('Changes discarded');
     }
 
-    /* ── TOAST ── */
+    async function signOutProfile() {
+      const client = await getSupabaseClient();
+      await client?.auth.signOut();
+      applyProfileSession(null);
+      showToast('Signed out');
+    }
+
+    function setValue(id, value) {
+      const node = document.getElementById(id);
+      if (node) node.value = value || '';
+    }
+
+    function getValue(id) {
+      return document.getElementById(id)?.value.trim() || '';
+    }
+
+    function setAuthStatus(message) {
+      const node = document.getElementById('profile-auth-status');
+      if (node) node.textContent = message || '';
+    }
+
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toast-msg').textContent = msg;
