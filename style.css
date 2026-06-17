@@ -663,8 +663,8 @@ nav.filter-bar {
 
 .card-info {
     padding: 11px 14px 14px;
-    background: rgba(124, 58, 237, 0.025);
-    border-top: 1px solid rgba(124, 58, 237, 0.07);
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.045), rgba(139, 92, 246, 0.075));
+    border-top: 1px solid rgba(124, 58, 237, 0.10);
     transition: background var(--transition-base), border-color var(--transition-base);
 }
 
@@ -826,8 +826,8 @@ nav.filter-bar {
 }
 
 .category-card:hover .card-info {
-    background: rgba(124, 58, 237, 0.055);
-    border-top-color: rgba(124, 58, 237, 0.14);
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.07), rgba(139, 92, 246, 0.12));
+    border-top-color: rgba(124, 58, 237, 0.18);
 }
 
 /* Independent Cards */
@@ -3114,6 +3114,29 @@ html[data-theme="dark"] .product-bottom strong {
 html[data-theme="dark"] .product-meta,
 html[data-theme="dark"] .product-brand {
     color: #6b6477;
+}
+
+html[data-theme="dark"] .top-brands .card-info,
+html[data-theme="dark"] .independent-brands .card-info {
+    background: linear-gradient(180deg, #241c3a 0%, #1b1530 100%);
+    border-top-color: rgba(139, 92, 246, 0.30);
+}
+
+html[data-theme="dark"] .top-brands .category-card:hover .card-info,
+html[data-theme="dark"] .independent-brands .category-card:hover .card-info {
+    background: linear-gradient(180deg, #2a2140 0%, #211936 100%);
+    border-top-color: rgba(139, 92, 246, 0.46);
+}
+
+html[data-theme="dark"] .top-brands .brand-name,
+html[data-theme="dark"] .independent-brands .brand-name {
+    color: #f8f5ff;
+}
+
+html[data-theme="dark"] .top-brands .item-badge,
+html[data-theme="dark"] .independent-brands .item-badge {
+    background: rgba(139, 92, 246, 0.22);
+    color: #d8b4fe;
 }
 
 html[data-theme="dark"] .admin-login-panel h2,
