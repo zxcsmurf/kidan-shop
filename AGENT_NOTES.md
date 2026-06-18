@@ -37,6 +37,31 @@
   - `npm run build` (`build` сейчас запускает `check`)
 - Реальный `README.md` в корне проекта пока отсутствует.
 
+## Safety snapshot
+
+- Branch for autonomous work: `ai/hermes-auto-work`.
+- Backup commit created: `Backup before Hermes autonomous work`.
+- Backup archive created next to project:
+  - `/c/Users/Kostya/Desktop/kidan/kidan-hermes-backup-20260618-220651.tar.gz`
+- Archive excludes: `node_modules`, `.next`, `dist`, `build`, `coverage`, `.git`.
+
+## Выполненная автономная работа
+
+- Создан `README.md` с локальным запуском, структурой страниц, переменными окружения и ссылками на setup-доки.
+- Создан `DEPLOY_CHECKLIST.md` с безопасным чеклистом перед деплоем.
+- Добавлены безопасные npm-проверки:
+  - `npm run check:json`
+  - `npm run check:files`
+  - `npm run check:links`
+  - `npm run check:syntax`
+- `npm run check` теперь запускает JSON/file/link/syntax проверки.
+- `npm run build` успешно запускает `npm run check`.
+
+## Последние проверки
+
+- `npm run check` — passed.
+- `npm run build` — passed.
+
 ## Активные блокеры
 
 Нет активных блокеров.

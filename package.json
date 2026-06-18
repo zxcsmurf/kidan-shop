@@ -4,7 +4,11 @@
   "private": true,
   "scripts": {
     "start": "npx http-server . -p 4178 -c-1",
-    "check": "node --check script.js && node --check api/security-utils.js && node --check api/create-checkout-session.js && node --check api/stripe-webhook.js && node --check api/support.js && node --check api/support-admin.js",
+    "check:json": "node scripts/check-json.js",
+    "check:files": "node scripts/smoke-files.js",
+    "check:links": "node scripts/check-local-links.js",
+    "check:syntax": "node --check script.js && node --check api/security-utils.js && node --check api/create-checkout-session.js && node --check api/stripe-webhook.js && node --check api/support.js && node --check api/support-admin.js && node --check scripts/check-json.js && node --check scripts/smoke-files.js && node --check scripts/check-local-links.js",
+    "check": "npm run check:json && npm run check:files && npm run check:links && npm run check:syntax",
     "build": "npm run check"
   },
   "devDependencies": {
