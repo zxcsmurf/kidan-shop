@@ -757,7 +757,6 @@
             <div class="profile-auth-actions">
               <button type="button" data-profile-email-auth="sign-in">Sign in</button>
               <button type="button" data-profile-email-auth="sign-up" class="secondary">Create account</button>
-              <button type="button" data-profile-email-auth="resend" class="secondary">Resend email</button>
             </div>
           </form>
 
@@ -1136,7 +1135,7 @@
         const email = document.getElementById('auth-email').value.trim();
         const password = document.getElementById('auth-email-password').value;
         if (!email) return setAuthStatus('Enter email.');
-        if (action !== 'resend' && !password) return setAuthStatus('Enter email and password.');
+        if (!password) return setAuthStatus('Enter email and password.');
         setAuthBusy(form, true, button);
         setAuthStatus(getEmailAuthBusyMessage(action));
         const response = await runEmailAuthAction(client, action, email, password);
@@ -1152,21 +1151,16 @@
       if (action === 'sign-up') {
         return client.auth.signUp({ email, password, options: { emailRedirectTo: getProfileRedirectUrl() } });
       }
-      if (action === 'resend') {
-        return client.auth.resend({ type: 'signup', email, options: { emailRedirectTo: getProfileRedirectUrl() } });
-      }
       return client.auth.signInWithPassword({ email, password });
     }
 
     function getEmailAuthBusyMessage(action) {
       if (action === 'sign-up') return 'Creating account...';
-      if (action === 'resend') return 'Sending confirmation email...';
       return 'Signing in...';
     }
 
     function getEmailAuthSuccessMessage(action) {
       if (action === 'sign-up') return 'Account created. You are signed in.';
-      if (action === 'resend') return 'Confirmation email requested. Check inbox and spam.';
       return 'Signed in.';
     }
 

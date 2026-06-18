@@ -1608,7 +1608,7 @@ function fillEmptyBrandLogoAreas(root = document) {
         fallback.className = 'brand-logo-fallback independent-logo-fallback';
         fallback.setAttribute('role', 'img');
         fallback.setAttribute('aria-label', name);
-        fallback.textContent = getFallbackInitials(name);
+        fallback.textContent = name;
         area.appendChild(fallback);
     });
 }
@@ -3319,6 +3319,10 @@ function initializeBrandConfigurator(brandName = '') {
         min: Number(minPrice?.value || 0),
         max: Number(maxPrice?.value || 500)
     };
+
+    drawer?.classList.remove('is-open');
+    drawer?.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
 
     function openDrawer() {
         drawer?.classList.add('is-open');
