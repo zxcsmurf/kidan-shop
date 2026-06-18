@@ -109,25 +109,7 @@ function initializeFilters() {
         allFilter.classList.add('active');
     }
 
-    // New quality button system
-    const qbtns = document.querySelectorAll('.qbtn');
-    const qPages = {
-        all: './index.html',
-        new: './new.html',
-        used: './used.html',
-        sale: './sale.html'
-    };
-
-    qbtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-            qbtns.forEach((b) => b.classList.remove('active'));
-            btn.classList.add('active');
-            const qValue = btn.getAttribute('data-q');
-            if (qPages[qValue]) {
-                window.location.href = qPages[qValue];
-            }
-        });
-    });
+    // .qbtn navigation is owned by initializeQualityNavigation().
 }
 
 /* ============================================
@@ -147,11 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
             card.style.opacity = '1';
         });
 
-        // Optional: Add click feedback
-        card.addEventListener('click', (e) => {
-            // Placeholder - no routing needed as per requirements
-            console.log('Category clicked:', card.querySelector('.brand-name').textContent);
-        });
     });
 });
 
@@ -323,8 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             sortBtns.forEach((b) => b.classList.remove('active'));
             btn.classList.add('active');
-            const sortType = btn.id;
-            console.log('Sort type:', sortType);
         });
     });
 });
@@ -452,21 +427,37 @@ function initializeListingModal() {
         document.body.classList.remove('modal-open');
     }
 
-    openers.forEach((opener) => opener.addEventListener('click', openModal));
-    closers.forEach((closer) => closer.addEventListener('click', closeModal));
-
-    photoInput?.addEventListener('change', () => {
-        renderPhotoPreviews(photoInput.files, photoPreview);
-        updatePhotoCount(photoInput.files, photoCount);
+    openers.forEach((opener) => {
+        if (opener.dataset.listingOpenerReady === 'true') return;
+        opener.dataset.listingOpenerReady = 'true';
+        opener.addEventListener('click', openModal);
+    });
+    closers.forEach((closer) => {
+        if (closer.dataset.listingCloserReady === 'true') return;
+        closer.dataset.listingCloserReady = 'true';
+        closer.addEventListener('click', closeModal);
     });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
-            closeModal();
-        }
-    });
+    if (photoInput && photoInput.dataset.photoInputReady !== 'true') {
+        photoInput.dataset.photoInputReady = 'true';
+        photoInput.addEventListener('change', () => {
+            renderPhotoPreviews(photoInput.files, photoPreview);
+            updatePhotoCount(photoInput.files, photoCount);
+        });
+    }
 
-    form?.addEventListener('submit', async (event) => {
+    if (modal.dataset.escapeReady !== 'true') {
+        modal.dataset.escapeReady = 'true';
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                closeModal();
+            }
+        });
+    }
+
+    if (!form || form.dataset.listingFormReady === 'true') return;
+    form.dataset.listingFormReady = 'true';
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(form);
         const title = formData.get('title') || 'Your item';
@@ -915,6 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeImageFallbacks();
     initializeMotionSystem();
     wireBrandCardLinks();
+    fillEmptyBrandLogoAreas();
     renderHomeProducts();
     initializeHeaderSearch();
     initializeWishlistLinks();
@@ -1608,6 +1600,19 @@ function wireBrandCardLinks() {
     });
 }
 
+function fillEmptyBrandLogoAreas(root = document) {
+    root.querySelectorAll('.category-card .card-logo-area').forEach((area) => {
+        if (area.querySelector('img, .brand-logo-fallback, .image-fallback') || area.textContent.trim()) return;
+        const name = area.closest('.category-card')?.querySelector('.brand-name')?.textContent?.trim() || 'Independent';
+        const fallback = document.createElement('div');
+        fallback.className = 'brand-logo-fallback independent-logo-fallback';
+        fallback.setAttribute('role', 'img');
+        fallback.setAttribute('aria-label', name);
+        fallback.textContent = getFallbackInitials(name);
+        area.appendChild(fallback);
+    });
+}
+
 function initializeHeaderSearch() {
     const input = document.querySelector('.search-input');
     const submit = document.querySelector('.search-submit-btn');
@@ -1712,7 +1717,7 @@ function initializeQualityNavigation() {
         sale: './sale.html'
     };
     const current = (window.location.pathname.split('/').pop() || 'index.html').replace('.html', '');
-    const activeKey = kidanCurrentCollectionState?.active || (current === 'index' || current === 'view-all' || !current ? 'all' : current);
+    const activeKey = kidanCurrentCollectionState?.active || (['new', 'used', 'sale'].includes(current) ? current : 'all');
 
     document.querySelectorAll('.qbtn').forEach((button) => {
         button.classList.toggle('active', button.getAttribute('data-q') === activeKey);
@@ -1724,6 +1729,7 @@ function initializeQualityNavigation() {
         });
     });
     initializeMotionSystem();
+    initializeListingModal();
 }
 
 function initializeWishlistLinks(root = document) {
@@ -1944,7 +1950,7 @@ function renderBrandPage() {
         <div class="nav-top">
           <a href="./index.html" class="nav-brand"><span class="brand-kidan">Kidan</span><span class="brand-shop"> Shop</span></a>
           <div class="nav-icons">
-            <a href="./coming-soon.html" class="sell-btn">+ Sell Item</a>
+            <button type="button" class="sell-btn" data-open-listing>+ Sell Item</button>
             <button type="button" class="nav-icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
               <svg class="icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
               <svg class="icon-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -2067,6 +2073,7 @@ function renderBrandPage() {
           </aside>
         </div>
       </main>
+      ${renderListingModalMarkup()}
     `;
 
     initializeBrandThemeToggle();
@@ -2825,6 +2832,66 @@ function renderChatThread(chat) {
     `;
 }
 
+function renderListingModalMarkup() {
+    return `
+      <div class="listing-modal" id="listingModal" aria-hidden="true">
+        <div class="modal-backdrop" data-close-listing></div>
+        <section class="listing-dialog" role="dialog" aria-modal="true" aria-labelledby="listingTitle">
+          <button type="button" class="modal-close" aria-label="Close listing form" data-close-listing>&times;</button>
+          <p class="modal-eyebrow">Sell on Kidan Shop</p>
+          <h2 id="listingTitle">Create a Listing</h2>
+          <form class="listing-form" id="listingForm">
+            <div class="form-grid">
+              <label>Item title
+                <input type="text" name="title" placeholder="Nike Air Max 90" required>
+              </label>
+              <label>Brand
+                <input type="text" name="brand" placeholder="Nike, Adidas, Supreme..." required>
+              </label>
+              <label>Category
+                <select name="category" required>
+                  <option value="">Choose category</option>
+                  <option>Sneakers</option>
+                  <option>Hoodies</option>
+                  <option>Jackets</option>
+                  <option>T-Shirts</option>
+                  <option>Accessories</option>
+                </select>
+              </label>
+              <label>Condition
+                <select name="condition" required>
+                  <option value="">Choose condition</option>
+                  <option>New with tags</option>
+                  <option>New without tags</option>
+                  <option>Used - excellent</option>
+                  <option>Used - good</option>
+                </select>
+              </label>
+              <label>Price
+                <input type="number" name="price" min="1" placeholder="120" required>
+              </label>
+              <label>Size
+                <input type="text" name="size" placeholder="M, L, EU 42...">
+              </label>
+            </div>
+            <label>Description
+              <textarea name="description" placeholder="Describe the item, fit, flaws, and shipping details." required></textarea>
+            </label>
+            <label class="photo-upload-field">Photos
+              <input type="file" name="photos" accept="image/*" multiple>
+              <span class="field-note">Add several photos. The first image will be used as the main listing photo.</span>
+              <span class="photo-count" data-photo-count>No photos selected</span>
+            </label>
+            <div class="photo-preview-grid" data-photo-preview>
+              <div class="photo-preview-empty">Selected photos will appear here</div>
+            </div>
+            <button type="submit" class="modal-submit">Publish Listing</button>
+          </form>
+        </section>
+      </div>
+    `;
+}
+
 function renderSimplePageShell(content) {
     return `
       <nav class="filter-bar" aria-label="Main navigation" style="position:sticky;top:0;z-index:9999;">
@@ -2837,7 +2904,7 @@ function renderSimplePageShell(content) {
             <button class="qbtn" data-q="sale" type="button">Sale</button>
           </div>
           <div class="nav-icons">
-            <a href="./coming-soon.html" class="sell-btn">+ Sell Item</a>
+            <button type="button" class="sell-btn" data-open-listing>+ Sell Item</button>
             <button type="button" class="nav-icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
               <svg class="icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
               <svg class="icon-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -2861,6 +2928,7 @@ function renderSimplePageShell(content) {
         <div class="bp ln1"></div><div class="bp ln2"></div><div class="bp ln3"></div><div class="bp cross1"></div><div class="bp cross2"></div>
       </div>
       ${content}
+      ${renderListingModalMarkup()}
     `;
 }
 

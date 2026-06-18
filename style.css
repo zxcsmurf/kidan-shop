@@ -750,6 +750,14 @@ nav.filter-bar {
   line-height: 1;
 }
 
+.independent-logo-fallback {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  font-size: 22px;
+  background: linear-gradient(135deg, #ede9fe, #ffffff);
+}
+
 .image-fallback {
   width: 100%;
   height: 100%;
@@ -3010,7 +3018,28 @@ kbd {
     .page-header { padding: 40px var(--spacing-sm) 36px; }
     .page-title { font-size: var(--font-size-xl); }
 
-    .header-search { display: none; }
+    .header-search {
+        display: block;
+        width: 100%;
+        margin: 0 auto 22px;
+    }
+
+    .search-wrap {
+        max-width: 100%;
+        padding: 5px 5px 5px 12px;
+        gap: 7px;
+        border-radius: 12px;
+    }
+
+    .search-input {
+        font-size: 13px;
+    }
+
+    .search-submit-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 9px;
+    }
 
     .nav-top {
         padding: 0 16px;
