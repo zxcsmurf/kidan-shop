@@ -239,6 +239,16 @@ function getSafeCheckoutError(error) {
 }
 
 function getAppOrigin(req) {
-  const allowed = Array.from(getAllowedOrigins(req));
-  return allowed[0] || 'https://kidan-shop.vercel.app';
+  const allowed = getAllowedOrigins(req);
+  const requestOrigin = normalizeRequestOrigin(req);
+  if (requestOrigin && allowed.has(requestOrigin)) return requestOrigin;
+  return Array.from(allowed)[0] || 'https://kidan-shop.vercel.app';
+}
+
+function normalizeRequestOrigin(req) {
+  try {
+    return new URL(req.headers.origin || '').origin;
+  } catch (error) {
+    return '';
+  }
 }

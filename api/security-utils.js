@@ -54,7 +54,7 @@ function normalizeOrigin(value) {
 
 function getAllowedOrigins(req) {
   const origins = new Set();
-  [process.env.APP_URL, process.env.NEXT_PUBLIC_APP_URL].filter(Boolean).forEach((value) => {
+  [process.env.APP_URL, process.env.NEXT_PUBLIC_APP_URL, 'https://kidan-shop.vercel.app'].filter(Boolean).forEach((value) => {
     const origin = normalizeOrigin(value);
     if (origin) origins.add(origin);
   });
