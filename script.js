@@ -103,8 +103,8 @@ function initializeFilters() {
         });
     });
 
-    // Set initial filter (show all)
-    const allFilter = document.querySelector('[data-filter="all"]');
+    // Set initial filter only when a real legacy filter control exists.
+    const allFilter = document.querySelector('.filter-btn[data-filter="all"]');
     if (allFilter) {
         allFilter.classList.add('active');
     }
