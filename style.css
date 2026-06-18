@@ -342,6 +342,16 @@ nav.filter-bar {
     background: rgba(139, 92, 246, 0.06);
     border-radius: 12px;
     padding: 4px;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.nav-quality-bar::-webkit-scrollbar {
+    display: none;
 }
 
 .qbtn {
@@ -355,6 +365,8 @@ nav.filter-bar {
     padding: 7px 20px;
     border-radius: 9px;
     transition: all 0.2s ease;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
 }
 
 .qbtn:hover  { color: #7c3aed; background: rgba(139, 92, 246, 0.08); }
@@ -637,11 +649,10 @@ nav.filter-bar {
 
 .category-card {
     background: #fff;
-    border: 1.5px solid rgba(139, 92, 246, 0.14);
+    border: 0;
     border-radius: 16px;
     cursor: pointer;
-    transition: border-color var(--transition-base),
-                transform var(--transition-base),
+    transition: transform var(--transition-base),
                 box-shadow var(--transition-base);
     display: flex;
     flex-direction: column;
@@ -705,6 +716,11 @@ nav.filter-bar {
 .hot-tag  { background: #fee2e2; color: #b91c1c; }
 .sale-tag { background: #fef3c7; color: #92400e; }
 .new-tag  { background: var(--color-badge-bg); color: var(--color-accent); }
+
+.category-card > .card-tag,
+.category-card > .card-badge {
+    display: none;
+}
 
 /* Brand logos */
 .brand-logo-img {
@@ -813,7 +829,6 @@ nav.filter-bar {
 
 /* Hover */
 .category-card:hover {
-    border-color: var(--color-accent);
     transform: translateY(-6px);
     box-shadow: 0 14px 40px rgba(124, 58, 237, 0.16);
 }
@@ -832,7 +847,6 @@ nav.filter-bar {
 
 /* Independent Cards */
 .independent-card {
-    border-color: rgba(139, 92, 246, 0.3);
     background: linear-gradient(145deg, #fff 0%, rgba(139, 92, 246, 0.02) 100%);
 }
 
@@ -1841,16 +1855,15 @@ kbd {
 
 .product-card {
   background: #fff;
-  border: 1px solid rgba(139, 92, 246, 0.15);
+  border: 0;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(17, 17, 17, 0.05);
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(124, 58, 237, 0.35);
   box-shadow: 0 18px 42px rgba(124, 58, 237, 0.13);
 }
 
@@ -3522,7 +3535,6 @@ html[data-theme="dark"] .independent-card {
 html[data-theme="dark"] .featured-title { color: var(--color-text-primary); }
 html[data-theme="dark"] .item-card {
     background: var(--color-card-bg);
-    border-color: rgba(139, 92, 246, 0.22);
 }
 html[data-theme="dark"] .item-name,
 html[data-theme="dark"] .item-price { color: var(--color-text-primary); }
@@ -3557,7 +3569,6 @@ html[data-theme="dark"] .payment-result-panel,
 html[data-theme="dark"] .empty-state,
 html[data-theme="dark"] .wishlist-empty {
     background: var(--color-card-bg);
-    border-color: rgba(139, 92, 246, 0.22);
 }
 
 /* Keep marketplace cards white in every theme for logo/product readability. */
@@ -3567,7 +3578,6 @@ html[data-theme="dark"] .product-card,
 html[data-theme="dark"] .item-card,
 html[data-theme="dark"] .collection-card {
     background: #ffffff;
-    border-color: rgba(139, 92, 246, 0.22);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
 }
 

@@ -1517,7 +1517,7 @@ function filterProducts(options = {}) {
             const haystack = `${product.title} ${product.brand} ${product.type} ${product.color} ${product.condition}`.toLowerCase();
             if (!haystack.includes(normalizeText(options.query))) return false;
         }
-        if (options.type && options.type !== 'All' && product.type !== options.type) return false;
+        if (options.type && options.type !== 'All' && normalizeText(product.type) !== normalizeText(options.type)) return false;
         if (options.color && options.color !== 'Any' && product.color !== options.color) return false;
         if (options.condition && options.condition !== 'Any' && product.condition !== options.condition) return false;
         if (options.min !== undefined && Number(product.price) < Number(options.min)) return false;
@@ -1600,6 +1600,10 @@ function wireBrandCardLinks() {
         const brandName = link.querySelector('.brand-name')?.textContent?.trim();
         if (brandName && kidanBrandPages[brandName]) {
             link.href = './' + kidanBrandPages[brandName];
+            link.setAttribute('aria-label', `Open ${brandName} listings`);
+        } else if (brandName) {
+            link.href = './view-all.html?brand=' + encodeURIComponent(brandName);
+            link.setAttribute('aria-label', `Open ${brandName} listings`);
         }
     });
 }
@@ -1708,7 +1712,7 @@ function initializeQualityNavigation() {
         sale: './sale.html'
     };
     const current = (window.location.pathname.split('/').pop() || 'index.html').replace('.html', '');
-    const activeKey = current === 'index' || !current ? 'all' : current;
+    const activeKey = kidanCurrentCollectionState?.active || (current === 'index' || current === 'view-all' || !current ? 'all' : current);
 
     document.querySelectorAll('.qbtn').forEach((button) => {
         button.classList.toggle('active', button.getAttribute('data-q') === activeKey);
@@ -2080,11 +2084,20 @@ function renderCollectionPage() {
     const page = document.querySelector('[data-collection-page]');
     if (!page) return;
 
-    const title = page.getAttribute('data-page-title') || 'All Listings';
-    const subtitle = page.getAttribute('data-page-subtitle') || 'Browse marketplace listings in one place.';
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('q') || '';
+    const brand = params.get('brand') || '';
+    const type = params.get('type') || params.get('category') || '';
     const active = page.getAttribute('data-active-tab') || 'all';
-    const query = new URLSearchParams(window.location.search).get('q') || '';
-    kidanCurrentCollectionState = { active, query };
+    const baseTitle = page.getAttribute('data-page-title') || 'All Listings';
+    const baseSubtitle = page.getAttribute('data-page-subtitle') || 'Browse marketplace listings in one place.';
+    const title = brand ? `${brand} Listings` : type ? `${type} Listings` : baseTitle;
+    const subtitle = brand
+        ? `Browse marketplace listings filtered by ${brand}.`
+        : type
+            ? `Browse marketplace listings filtered by ${type}.`
+            : baseSubtitle;
+    kidanCurrentCollectionState = { active, query, brand, type };
     const safeTitle = escapeHtml(title);
     const safeSubtitle = escapeHtml(query ? `Search results for "${query}".` : subtitle);
 
@@ -2111,7 +2124,7 @@ function renderCollectionPage() {
     initializeBrandThemeToggle();
     renderProductGrid(
         document.getElementById('collection-products'),
-        filterProducts({ tab: active === 'all' ? null : active, query }),
+        filterProducts({ tab: active === 'all' ? null : active, query, brand, type }),
         'No products in this section yet.'
     );
     updateWishlistBadge();
