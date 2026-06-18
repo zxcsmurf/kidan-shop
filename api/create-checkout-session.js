@@ -1,4 +1,13 @@
 const Stripe = require('stripe');
+const {
+  getAllowedOrigins,
+  getClientIp,
+  hasTrustedOrigin,
+  parseJsonBody,
+  rateLimit,
+  sendError,
+  setNoStore,
+} = require('./security-utils');
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STATIC_LISTINGS = {
@@ -17,6 +26,8 @@ const STATIC_LISTINGS = {
 };
 
 module.exports = async function handler(req, res) {
+  setNoStore(res);
+
   try {
     return await handleCheckout(req, res);
   } catch (error) {
@@ -26,60 +37,72 @@ module.exports = async function handler(req, res) {
       message: error?.message,
     });
 
-    return res.status(502).json({
-      error: getSafeCheckoutError(error),
-    });
+    return sendError(res, 502, getSafeCheckoutError(error));
   }
 };
 
 async function handleCheckout(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendError(res, 405, 'Method not allowed');
   }
 
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(503).json({
-      error: 'Stripe checkout is not configured yet. Add STRIPE_SECRET_KEY, SUPABASE_URL, and SUPABASE_SERVICE_ROLE_KEY in Vercel.',
-    });
+  if (!hasTrustedOrigin(req)) {
+    return sendError(res, 403, 'Request origin is not allowed.');
   }
 
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  const ip = getClientIp(req);
+  if (!rateLimit(`checkout:${ip}`, 20, 60 * 1000)) {
+    return sendError(res, 429, 'Too many checkout attempts. Try again later.');
+  }
+
+  const supabaseAuthKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !supabaseAuthKey) {
+    return sendError(res, 503, 'Stripe checkout is not configured yet. Add STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY in Vercel.');
+  }
+
+  let body;
+  try {
+    body = parseJsonBody(req, 8 * 1024);
+  } catch (error) {
+    return sendError(res, error.statusCode || 400, 'Invalid checkout request.');
+  }
+
   const orderId = String(body.orderId || '');
   const listingId = String(body.listingId || '');
   const sessionId = String(body.sessionId || '').slice(0, 120);
   const accessToken = String(body.accessToken || '');
 
   if (!UUID_RE.test(orderId) || !isSafeListingId(listingId) || !sessionId || !accessToken) {
-    return res.status(400).json({ error: 'Invalid checkout request.' });
+    return sendError(res, 400, 'Invalid checkout request.');
   }
 
   const user = await fetchAuthenticatedUser(accessToken);
   if (!user) {
-    return res.status(401).json({ error: 'Sign in again before opening Stripe Checkout.' });
+    return sendError(res, 401, 'Sign in again before opening Stripe Checkout.');
   }
 
   const listing = await resolveListing(listingId);
   if (!listing) {
-    return res.status(404).json({ error: 'Listing is not available for secure checkout yet.' });
+    return sendError(res, 404, 'Listing is not available for secure checkout yet.');
   }
 
   const order = await fetchOrder(orderId);
   if (!order || order.session_id !== sessionId || order.listing_id !== listingId) {
-    return res.status(400).json({ error: 'Order does not match this checkout request.' });
+    return sendError(res, 400, 'Order does not match this checkout request.');
   }
 
   if (order.buyer_user_id && order.buyer_user_id !== user.id) {
-    return res.status(403).json({ error: 'This order belongs to a different signed-in account.' });
+    return sendError(res, 403, 'This order belongs to a different signed-in account.');
   }
 
   if (!['pending_payment_setup', 'stripe_checkout_created'].includes(order.status)) {
-    return res.status(409).json({ error: 'This order is not ready for checkout.' });
+    return sendError(res, 409, 'This order is not ready for checkout.');
   }
 
   const amountInCents = Math.round(Number(listing.price) * 100);
   if (!Number.isInteger(amountInCents) || amountInCents < 50) {
-    return res.status(400).json({ error: 'Listing price is not valid for Stripe Checkout.' });
+    return sendError(res, 400, 'Listing price is not valid for Stripe Checkout.');
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -101,6 +124,7 @@ async function handleCheckout(req, res) {
         quantity: 1,
       },
     ],
+    client_reference_id: orderId,
     metadata: {
       order_id: orderId,
       listing_id: listingId,
@@ -166,7 +190,8 @@ async function fetchLegacyOrder(orderId) {
 }
 
 async function fetchAuthenticatedUser(accessToken) {
-  const apiKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const apiKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!apiKey) return null;
   const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
     headers: {
       apikey: apiKey,
@@ -214,10 +239,6 @@ function getSafeCheckoutError(error) {
 }
 
 function getAppOrigin(req) {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  return `${proto}://${host}`;
+  const allowed = Array.from(getAllowedOrigins(req));
+  return allowed[0] || 'https://kidan-shop.vercel.app';
 }

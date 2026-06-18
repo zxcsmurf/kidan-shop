@@ -497,7 +497,7 @@ function renderPhotoPreviews(files, previewRoot) {
     if (!previewRoot) return;
 
     previewRoot.innerHTML = '';
-    const selectedFiles = Array.from(files || []);
+    const selectedFiles = Array.from(files || []).filter(isAllowedListingImage).slice(0, 6);
 
     if (!selectedFiles.length) {
         const empty = document.createElement('div');
@@ -564,9 +564,33 @@ function updateMarketplaceStatsUI(stats) {
     });
 }
 
+const KIDAN_ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const KIDAN_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+function isAllowedListingImage(file) {
+    return file
+        && KIDAN_ALLOWED_IMAGE_TYPES.has(file.type)
+        && Number(file.size || 0) > 0
+        && Number(file.size || 0) <= KIDAN_MAX_IMAGE_BYTES;
+}
+
+function isSafeStoredPhotoUrl(value) {
+    const text = String(value || '').trim();
+    if (!text || text.length > 1200 || text.startsWith('data:') || text.startsWith('blob:')) return false;
+    if (text.startsWith('./') || text.startsWith('/')) return true;
+    try {
+        const url = new URL(text);
+        return url.protocol === 'https:';
+    } catch (error) {
+        return false;
+    }
+}
+
 function readFilesAsDataUrls(files) {
-    return Promise.all(Array.from(files || []).slice(0, 6).map(async (file) => {
+    const safeFiles = Array.from(files || []).filter(isAllowedListingImage).slice(0, 6);
+    return Promise.all(safeFiles.map(async (file) => {
         const imageFile = await compressImageFile(file, { maxSize: 900, quality: 0.72 });
+        if (!imageFile) return null;
         return readBlobAsDataUrl(imageFile);
     })).then((items) => items.filter(Boolean));
 }
@@ -581,8 +605,7 @@ function readBlobAsDataUrl(blob) {
 }
 
 async function compressImageFile(file, options = {}) {
-    if (!file?.type?.startsWith('image/')) return file;
-    if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+    if (!isAllowedListingImage(file)) return null;
 
     const maxSize = options.maxSize || 1400;
     const quality = options.quality || 0.78;
@@ -605,11 +628,11 @@ async function compressImageFile(file, options = {}) {
             canvas.toBlob(resolve, 'image/jpeg', quality);
         });
 
-        if (!blob) return file;
+        if (!blob) return null;
         const baseName = (file.name || 'listing-photo').replace(/\.[^.]+$/, '');
         return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
     } catch (error) {
-        return file;
+        return null;
     }
 }
 
@@ -634,12 +657,12 @@ function loadImageForCompression(file) {
 }
 
 async function dataUrlToImageFile(dataUrl, name = 'listing-photo.jpg') {
-    if (!String(dataUrl || '').startsWith('data:image/')) return null;
+    if (!/^data:image\/(jpeg|png|webp);base64,/i.test(String(dataUrl || ''))) return null;
 
     try {
         const response = await fetch(dataUrl);
         const blob = await response.blob();
-        if (!blob.type?.startsWith('image/')) return null;
+        if (!KIDAN_ALLOWED_IMAGE_TYPES.has(blob.type) || blob.size > KIDAN_MAX_IMAGE_BYTES) return null;
         return new File([blob], name, { type: blob.type, lastModified: Date.now() });
     } catch (error) {
         return null;
@@ -647,11 +670,11 @@ async function dataUrlToImageFile(dataUrl, name = 'listing-photo.jpg') {
 }
 
 async function buildPhotoFilesForRemote(product, photoFiles = []) {
-    const explicitFiles = Array.from(photoFiles || []).filter((file) => file?.type?.startsWith('image/'));
+    const explicitFiles = Array.from(photoFiles || []).filter(isAllowedListingImage);
     if (explicitFiles.length) return explicitFiles.slice(0, 6);
 
     const dataPhotos = (product.photos || [])
-        .filter((photo) => String(photo || '').startsWith('data:image/'))
+        .filter((photo) => /^data:image\/(jpeg|png|webp);base64,/i.test(String(photo || '')))
         .slice(0, 6);
 
     const files = [];
@@ -796,103 +819,41 @@ function setLocalSupportMessages(messages) {
 }
 
 async function getOrCreateSupportThread() {
-    const client = await getSupabaseClient();
-    if (!client) return null;
-
-    const sessionId = getKidanSessionId();
-
-    try {
-        const existing = await client
-            .from('support_threads')
-            .select('id,session_id,status,customer_label,created_at,updated_at')
-            .eq('session_id', sessionId)
-            .maybeSingle();
-
-        if (existing.data?.id) return existing.data;
-
-        const created = await client
-            .from('support_threads')
-            .insert({
-                session_id: sessionId,
-                customer_label: `Visitor ${sessionId.slice(0, 8)}`
-            })
-            .select('id,session_id,status,customer_label,created_at,updated_at')
-            .single();
-
-        return created.data || null;
-    } catch (error) {
-        return null;
-    }
+    const result = await callSupportApi({ action: 'messages' });
+    return result.ok ? { id: getKidanSessionId(), session_id: getKidanSessionId() } : null;
 }
 
 async function fetchSupportMessages() {
-    const client = await getSupabaseClient();
-    if (!client) return [];
-
-    const thread = await getExistingSupportThread();
-    if (!thread?.id) return [];
-
-    try {
-        const { data, error } = await client
-            .from('support_messages')
-            .select('id,sender,body,created_at')
-            .eq('thread_id', thread.id)
-            .order('created_at', { ascending: true });
-
-        if (error) return [];
-        if (data?.length) setLocalSupportMessages(data);
-        return data || [];
-    } catch (error) {
-        return [];
-    }
+    const result = await callSupportApi({ action: 'messages' });
+    const messages = result.ok ? (result.data?.messages || []) : [];
+    if (messages.length) setLocalSupportMessages(messages);
+    return messages;
 }
 
 async function getExistingSupportThread() {
-    const client = await getSupabaseClient();
-    if (!client) return null;
-
-    const sessionId = getKidanSessionId();
-
-    try {
-        const { data } = await client
-            .from('support_threads')
-            .select('id,session_id,status,customer_label,created_at,updated_at')
-            .eq('session_id', sessionId)
-            .maybeSingle();
-        return data || null;
-    } catch (error) {
-        return null;
-    }
+    const result = await callSupportApi({ action: 'messages' });
+    return result.ok ? { id: getKidanSessionId(), session_id: getKidanSessionId() } : null;
 }
 
 async function sendSupportMessage(text) {
-    const client = await getSupabaseClient();
-    if (!client || !text.trim()) return false;
+    const result = await callSupportApi({ action: 'send', body: text.trim() });
+    const messages = result.ok ? (result.data?.messages || []) : [];
+    if (messages.length) setLocalSupportMessages(messages);
+    return result.ok;
+}
 
-    const thread = await getOrCreateSupportThread();
-    if (!thread?.id) return false;
-
+async function callSupportApi(payload) {
     try {
-        const createdAt = new Date().toISOString();
-        const { error } = await client
-            .from('support_messages')
-            .insert({
-                thread_id: thread.id,
-                sender: 'user',
-                body: text.trim(),
-                created_at: createdAt
-            });
-
-        if (error) return false;
-
-        await client
-            .from('support_threads')
-            .update({ status: 'open', updated_at: createdAt })
-            .eq('id', thread.id);
-
-        return true;
+        const response = await fetch('/api/support', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId: getKidanSessionId(), ...payload })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) return { ok: false, error: data.error || 'Support request failed.' };
+        return { ok: true, data };
     } catch (error) {
-        return false;
+        return { ok: false, error: 'Support API is unavailable.' };
     }
 }
 
@@ -1374,11 +1335,11 @@ async function fetchRemoteProducts() {
 
 async function uploadListingPhotoFiles(client, listingId, files = []) {
     const uploadedUrls = [];
-    const safeFiles = Array.from(files || []).slice(0, 6);
+    const safeFiles = Array.from(files || []).filter(isAllowedListingImage).slice(0, 6);
 
     for (const [index, file] of safeFiles.entries()) {
-        if (!file?.type?.startsWith('image/')) continue;
         const uploadFile = await compressImageFile(file, { maxSize: 1400, quality: 0.82 });
+        if (!uploadFile) continue;
         const extension = (uploadFile.name || 'photo.jpg').split('.').pop()?.toLowerCase() || 'jpg';
         const path = `${listingId}/${Date.now()}-${index}.${extension}`;
         const { error } = await client.storage
@@ -1404,6 +1365,8 @@ async function uploadListingPhotoFiles(client, listingId, files = []) {
 async function createRemoteListing(product, photoFiles = []) {
     const client = await getSupabaseClient();
     if (!client) return null;
+    const session = await getKidanAuthSession();
+    if (!session?.user?.id) return null;
 
     let response;
     try {
@@ -1418,7 +1381,9 @@ async function createRemoteListing(product, photoFiles = []) {
                 price: product.price,
                 description: product.description,
                 seller_name: product.seller || 'Seller',
-                tag: product.tag || normalizeText(product.condition || 'used')
+                tag: product.tag || normalizeText(product.condition || 'used'),
+                seller_user_id: session.user.id,
+                seller_session_id: getKidanSessionId()
             })
             .select('id,title,brand,category,color,condition,price,description,seller_name,status,tag,created_at')
             .single();
@@ -1433,7 +1398,7 @@ async function createRemoteListing(product, photoFiles = []) {
     const storagePhotos = await uploadListingPhotoFiles(client, data.id, uploadFiles);
     const fallbackPhotos = (Array.isArray(product.photos) && product.photos.length ? product.photos : [product.image])
         .filter(Boolean)
-        .filter((photo) => !String(photo).startsWith('data:image/') || String(photo).length < 900000);
+        .filter(isSafeStoredPhotoUrl);
     const photos = storagePhotos.length ? storagePhotos : fallbackPhotos;
     if (photos.length) {
         try {
@@ -1797,13 +1762,15 @@ function setWishlistIds(ids) {
 async function fetchRemoteWishlist() {
     const client = await getSupabaseClient();
     if (!client) return [];
+    const session = await getKidanAuthSession();
+    if (!session?.user?.id) return [];
 
     let response;
     try {
         response = await client
             .from('wishlist_items')
             .select('listing_id')
-            .eq('session_id', getKidanSessionId());
+            .eq('user_id', session.user.id);
     } catch (error) {
         return [];
     }
@@ -1819,17 +1786,23 @@ async function saveRemoteWishlistItem(id, liked) {
 
     const client = await getSupabaseClient();
     if (!client) return;
+    const session = await getKidanAuthSession();
+    if (!session?.user?.id) return;
 
     try {
         if (liked) {
             await client
                 .from('wishlist_items')
-                .upsert({ session_id: getKidanSessionId(), listing_id: id }, { onConflict: 'session_id,listing_id' });
+                .upsert({
+                    user_id: session.user.id,
+                    session_id: getKidanSessionId(),
+                    listing_id: id
+                }, { onConflict: 'user_id,listing_id' });
         } else {
             await client
                 .from('wishlist_items')
                 .delete()
-                .eq('session_id', getKidanSessionId())
+                .eq('user_id', session.user.id)
                 .eq('listing_id', id);
         }
     } catch (error) {}
@@ -1907,15 +1880,26 @@ function refreshProductViews() {
     renderHomeProducts();
 }
 
+function cleanListingText(value, fallback, maxLength) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    return (text || fallback).slice(0, maxLength);
+}
+
+function cleanListingPrice(value) {
+    const price = Number(value || 1);
+    if (!Number.isFinite(price)) return 1;
+    return Math.min(10000, Math.max(1, Math.round(price * 100) / 100));
+}
+
 function saveListingToProduct(formData, photos = [], photoFiles = []) {
-    const title = String(formData.get('title') || 'New listing').trim();
+    const title = cleanListingText(formData.get('title'), 'New listing', 120);
     const product = saveProductFromListing({
         title,
-        brand: String(formData.get('brand') || 'Local Brands').trim(),
-        category: String(formData.get('category') || 'Accessories').trim(),
-        condition: String(formData.get('condition') || 'Used').trim(),
-        price: Number(formData.get('price') || 1),
-        description: String(formData.get('description') || '').trim(),
+        brand: cleanListingText(formData.get('brand'), 'Local Brands', 80),
+        category: cleanListingText(formData.get('category'), 'Accessories', 60),
+        condition: cleanListingText(formData.get('condition'), 'Used', 20),
+        price: cleanListingPrice(formData.get('price')),
+        description: cleanListingText(formData.get('description'), '', 2000),
         photos,
         photoFiles
     });
@@ -2375,13 +2359,15 @@ function normalizeRemoteChat(row) {
 async function fetchRemoteChats() {
     const client = await getSupabaseClient();
     if (!client) return [];
+    const session = await getKidanAuthSession();
+    if (!session?.user?.id) return [];
 
     let response;
     try {
         response = await client
             .from('chats')
-            .select('id,session_id,listing_id,seller_name,created_at,updated_at,messages(id,sender,body,created_at)')
-            .eq('session_id', getKidanSessionId())
+            .select('id,session_id,buyer_user_id,listing_id,seller_name,created_at,updated_at,messages(id,sender,body,created_at)')
+            .eq('buyer_user_id', session.user.id)
             .order('updated_at', { ascending: false });
     } catch (error) {
         return [];
@@ -2399,6 +2385,8 @@ async function createRemoteChat(productId) {
     const product = getProductById(productId);
     const client = await getSupabaseClient();
     if (!client || !product) return null;
+    const session = await getKidanAuthSession();
+    if (!session?.user?.id) return null;
 
     let response;
     try {
@@ -2406,11 +2394,13 @@ async function createRemoteChat(productId) {
             .from('chats')
             .upsert({
                 session_id: getKidanSessionId(),
+                buyer_user_id: session.user.id,
+                buyer_session_id: getKidanSessionId(),
                 listing_id: productId,
                 seller_name: product.seller || 'Seller',
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'session_id,listing_id' })
-            .select('id,session_id,listing_id,seller_name,created_at,updated_at,messages(id,sender,body,created_at)')
+            }, { onConflict: 'buyer_user_id,listing_id' })
+            .select('id,session_id,buyer_user_id,listing_id,seller_name,created_at,updated_at,messages(id,sender,body,created_at)')
             .single();
     } catch (error) {
         return null;
@@ -2882,20 +2872,20 @@ async function renderAdminSupportAuthState() {
     const root = document.getElementById('admin-support-root');
     if (!root) return;
 
-    const pin = sessionStorage.getItem('kidanSupportAdminPin');
-    if (!pin) {
+    const hasAdminSession = sessionStorage.getItem('kidanSupportAdminReady') === 'true';
+    if (!hasAdminSession) {
         renderAdminPinLogin(root);
         return;
     }
 
     const result = await callSupportAdminApi({ action: 'list' });
     if (!result.ok) {
-        sessionStorage.removeItem('kidanSupportAdminPin');
+        sessionStorage.removeItem('kidanSupportAdminReady');
         renderAdminPinLogin(root, result.error);
         return;
     }
 
-    renderAdminInbox(root, pin);
+    renderAdminInbox(root);
 }
 
 function renderAdminPinLogin(root, message = '') {
@@ -2921,8 +2911,14 @@ function renderAdminPinLogin(root, message = '') {
         event.preventDefault();
         const pin = document.getElementById('admin-pin')?.value.trim();
         if (!pin) return;
-        sessionStorage.setItem('kidanSupportAdminPin', pin);
         setAdminAuthStatus('Opening support inbox...');
+        const result = await callSupportAdminApi({ action: 'login', pin });
+        if (!result.ok) {
+            sessionStorage.removeItem('kidanSupportAdminReady');
+            setAdminAuthStatus(result.error);
+            return;
+        }
+        sessionStorage.setItem('kidanSupportAdminReady', 'true');
         await renderAdminSupportAuthState();
     });
 }
@@ -3092,7 +3088,8 @@ async function renderAdminInbox(root) {
     `;
 
     document.getElementById('admin-sign-out')?.addEventListener('click', async () => {
-        sessionStorage.removeItem('kidanSupportAdminPin');
+        await callSupportAdminApi({ action: 'logout' });
+        sessionStorage.removeItem('kidanSupportAdminReady');
         await renderAdminSupportAuthState();
     });
 
@@ -3190,12 +3187,12 @@ async function updateSupportThreadStatus(threadId, status) {
 }
 
 async function callSupportAdminApi(payload) {
-    const pin = sessionStorage.getItem('kidanSupportAdminPin') || '';
     try {
         const response = await fetch('/api/support-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin, ...payload })
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) return { ok: false, error: data.error || 'Support admin request failed.' };

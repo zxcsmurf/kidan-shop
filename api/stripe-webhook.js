@@ -1,30 +1,44 @@
 const Stripe = require('stripe');
+const { isUuid, sendError, setNoStore } = require('./security-utils');
 
 module.exports = async function handler(req, res) {
+  setNoStore(res);
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendError(res, 405, 'Method not allowed');
   }
 
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return res.status(503).json({ error: 'Stripe webhook is not configured.' });
+    return sendError(res, 503, 'Stripe webhook is not configured.');
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   const signature = req.headers['stripe-signature'];
-  const rawBody = await readRawBody(req);
+  if (!signature) return sendError(res, 400, 'Missing Stripe signature.');
+
+  let rawBody;
+  try {
+    rawBody = await readRawBody(req, 256 * 1024);
+  } catch (error) {
+    return sendError(res, 413, 'Webhook payload is too large.');
+  }
 
   let event;
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
-    return res.status(400).json({ error: 'Invalid Stripe signature.' });
+    return sendError(res, 400, 'Invalid Stripe signature.');
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    await patchOrder(session.metadata?.order_id, {
+    const orderId = session.metadata?.order_id;
+    if (!isUuid(orderId) || session.payment_status !== 'paid') {
+      return res.status(200).json({ received: true });
+    }
+    await patchOrder(orderId, {
       status: 'paid',
       provider: 'stripe',
       provider_session_id: session.id,
@@ -34,7 +48,9 @@ module.exports = async function handler(req, res) {
 
   if (event.type === 'checkout.session.expired') {
     const session = event.data.object;
-    await patchOrder(session.metadata?.order_id, {
+    const orderId = session.metadata?.order_id;
+    if (!isUuid(orderId)) return res.status(200).json({ received: true });
+    await patchOrder(orderId, {
       status: 'expired',
       provider: 'stripe',
       provider_session_id: session.id,
@@ -45,13 +61,28 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({ received: true });
 };
 
-async function readRawBody(req) {
-  if (Buffer.isBuffer(req.body)) return req.body;
-  if (typeof req.body === 'string') return Buffer.from(req.body);
+async function readRawBody(req, maxBytes) {
+  if (Buffer.isBuffer(req.body)) {
+    if (req.body.length > maxBytes) throw new Error('Payload too large');
+    return req.body;
+  }
+  if (typeof req.body === 'string') {
+    const buffer = Buffer.from(req.body);
+    if (buffer.length > maxBytes) throw new Error('Payload too large');
+    return buffer;
+  }
 
   const chunks = [];
+  let total = 0;
   for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buffer.length;
+    if (total > maxBytes) {
+      const error = new Error('Payload too large');
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(buffer);
   }
   return Buffer.concat(chunks);
 }

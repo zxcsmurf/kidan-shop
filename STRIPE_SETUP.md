@@ -10,11 +10,12 @@ Add these in Vercel Project Settings -> Environment Variables:
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 SUPABASE_URL
+SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
 APP_URL
 ```
 
-`STRIPE_SECRET_KEY` and `SUPABASE_SERVICE_ROLE_KEY` must never be added to frontend files or committed to GitHub.
+`STRIPE_SECRET_KEY` and `SUPABASE_SERVICE_ROLE_KEY` must never be added to frontend files or committed to GitHub. `SUPABASE_ANON_KEY` is safe to expose, but keep it in Vercel too so server functions can validate user sessions without using the service key for Auth lookups.
 
 ## Webhook
 

@@ -18,7 +18,7 @@ SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Use a long private PIN/password for `SUPPORT_ADMIN_PIN`. Do not commit it to GitHub.
+Use a long private PIN/password for `SUPPORT_ADMIN_PIN` (at least 24 random characters). Do not commit it to GitHub. The support API now rate-limits PIN attempts and only accepts same-origin browser requests.
 
 ## Why the old login failed
 
@@ -33,3 +33,7 @@ https://kidan-shop.vercel.app/**
 ```
 
 Phone login also requires an SMS provider in Supabase Auth settings.
+
+## Extra Auth hardening
+
+In Supabase Dashboard -> Authentication -> Security, enable leaked password protection. Supabase Advisors will keep warning until this is enabled manually.
