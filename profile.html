@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=20260618-security-hardening"/>
+  <link rel="stylesheet" href="style.css?v=20260618-profile-reviews"/>
   <script>
     // Apply saved theme before first paint (shared across all pages)
     (function () {
@@ -290,6 +290,107 @@
       color: #9ca3af;
       text-transform: uppercase;
       letter-spacing: 0.8px;
+    }
+
+    .profile-section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .profile-section-head p {
+      margin: 4px 0 0;
+      color: #6b6477;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .profile-listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .profile-empty-state {
+      border: 1px dashed rgba(139, 92, 246, 0.22);
+      border-radius: 14px;
+      padding: 22px;
+      color: #6b6477;
+      background: #fbfaff;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .review-summary-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      color: #6b6477;
+      font-size: 14px;
+    }
+
+    .review-stars {
+      color: #7c3aed;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .profile-review-form {
+      border: 1px solid rgba(139, 92, 246, 0.14);
+      background: #fbfaff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .profile-review-form .field-grid {
+      margin-bottom: 12px;
+    }
+
+    .profile-review-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .profile-review-item {
+      border: 1px solid rgba(139, 92, 246, 0.12);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .profile-review-item header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .profile-review-item strong {
+      color: #111;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .profile-review-item span,
+    .profile-review-item time {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    .profile-review-item p {
+      margin: 0;
+      color: #4b4658;
+      line-height: 1.55;
+    }
+
+    .public-profile-mode [data-private-card] {
+      display: none;
     }
 
     /* ── DANGER ZONE ── */
@@ -685,20 +786,20 @@
       <!-- Stats -->
       <div class="profile-stats">
         <div class="pstat">
-          <div class="pstat-val">0</div>
+          <div class="pstat-val" id="profile-stat-listings">0</div>
           <div class="pstat-label">Listings</div>
         </div>
         <div class="pstat">
-          <div class="pstat-val">0</div>
+          <div class="pstat-val" id="profile-stat-sold">0</div>
           <div class="pstat-label">Sold</div>
         </div>
         <div class="pstat">
-          <div class="pstat-val">-</div>
+          <div class="pstat-val" id="profile-stat-rating">-</div>
           <div class="pstat-label">Rating</div>
         </div>
         <div class="pstat">
-          <div class="pstat-val">0</div>
-          <div class="pstat-label">Wishlist</div>
+          <div class="pstat-val" id="profile-stat-reviews">0</div>
+          <div class="pstat-label">Reviews</div>
         </div>
       </div>
 
@@ -732,7 +833,7 @@
       </div>
 
       <!-- Personal info -->
-      <div class="p-card">
+      <div class="p-card" data-private-card>
         <div class="p-card-title">Personal Information</div>
         <div class="field-grid" style="margin-bottom:16px">
           <div class="field">
@@ -769,14 +870,39 @@
         </div>
       </div>
 
-      <div class="p-card">
+      <div class="p-card" data-private-card>
         <div class="p-card-title">Selling</div>
         <p class="danger-text">Create a new marketplace listing directly from your profile.</p>
         <button type="button" class="save-btn" data-open-listing>+ Add Listing</button>
       </div>
 
-      <!-- Location -->
       <div class="p-card">
+        <div class="profile-section-head">
+          <div>
+            <div class="p-card-title">Listings</div>
+            <p id="profile-listings-copy">Items from this profile appear here.</p>
+          </div>
+          <a class="btn-secondary" id="profile-public-link" href="./profile.html" hidden>Public link</a>
+        </div>
+        <div class="profile-listings-grid" id="profile-listings-grid">
+          <div class="profile-empty-state">Loading listings...</div>
+        </div>
+      </div>
+
+      <div class="p-card">
+        <div class="profile-section-head">
+          <div>
+            <div class="p-card-title">Reviews</div>
+            <p id="profile-reviews-copy">Reviews from buyers after completed orders.</p>
+          </div>
+        </div>
+        <div class="review-summary-row" id="profile-review-summary">No reviews yet.</div>
+        <div id="profile-review-form-slot"></div>
+        <div class="profile-review-list" id="profile-review-list"></div>
+      </div>
+
+      <!-- Location -->
+      <div class="p-card" data-private-card>
         <div class="p-card-title">Location</div>
         <div class="field-grid" style="margin-bottom:24px">
           <div class="field">
@@ -813,7 +939,7 @@
       </div>
 
       <!-- Security -->
-      <div class="p-card">
+      <div class="p-card" data-private-card>
         <div class="p-card-title">Login Details</div>
         <div class="field-grid" style="margin-bottom:16px">
           <div class="field">
@@ -835,7 +961,7 @@
       </div>
 
       <!-- Danger zone -->
-      <div class="p-card danger-zone">
+      <div class="p-card danger-zone" data-private-card>
         <div class="p-card-title">Danger Zone</div>
         <p class="danger-text">Deleting your account is permanent. All of your listings, messages, and reviews will be removed.</p>
         <button class="btn-danger" type="button">Delete Account</button>
@@ -906,13 +1032,14 @@
     </section>
   </div>
 
-  <script src="script.js?v=20260618-security-hardening"></script>
+  <script src="script.js?v=20260618-profile-reviews"></script>
   <script>
     let kidanProfileSession = null;
     const PROFILE_SUPABASE_URL = 'https://bissogumzvqklxttaqne.supabase.co';
     const PROFILE_SUPABASE_KEY = 'sb_publishable_WnWEryXFZUjKy45NjK6TBA_Vvc07rKT';
 
     document.addEventListener('DOMContentLoaded', () => {
+      window.refreshKidanProfileMarketplace = () => applyProfileSession(kidanProfileSession);
       initializeProfileAuthGate();
       initializeProfileAvatar();
       document.getElementById('profile-sign-out')?.addEventListener('click', signOutProfile);
@@ -1120,13 +1247,25 @@
       return true;
     }
 
-    function applyProfileSession(session) {
+    async function applyProfileSession(session) {
       kidanProfileSession = session;
       const isSignedIn = Boolean(session?.user);
+      const targetUserId = getProfileTargetUserId();
+      const isPublicSellerView = targetUserId && targetUserId !== session?.user?.id;
+
+      if (isPublicSellerView) {
+        document.getElementById('profile-auth').hidden = true;
+        document.getElementById('profile-shell').hidden = false;
+        await hydratePublicProfile(targetUserId);
+        return;
+      }
+
       document.getElementById('profile-auth').hidden = isSignedIn;
       document.getElementById('profile-shell').hidden = !isSignedIn;
+      document.getElementById('profile-shell')?.classList.toggle('public-profile-mode', false);
+
       if (isSignedIn) {
-        hydrateProfile(session.user);
+        await hydrateProfile(session.user);
         setAuthStatus('');
         redirectAfterAuthIfNeeded();
       } else {
@@ -1134,10 +1273,16 @@
       }
     }
 
-    function hydrateProfile(user) {
+    function getProfileTargetUserId() {
+      const raw = new URLSearchParams(window.location.search).get('user') || '';
+      return typeof isSupabaseUuid === 'function' && isSupabaseUuid(raw) ? raw : '';
+    }
+
+    async function hydrateProfile(user) {
       const meta = user.user_metadata || {};
       const draft = getProfileDraft(user.id);
-      const data = { ...meta, ...draft };
+      const publicProfile = await fetchPublicProfile(user.id);
+      const data = { ...meta, ...publicProfile, ...draft };
       setValue('first-name', data.firstName || data.first_name || '');
       setValue('last-name', data.lastName || data.last_name || '');
       setValue('username', data.username || '');
@@ -1148,6 +1293,45 @@
       setValue('email', user.email || data.email || '');
       updateProfileDisplay();
       if (data.avatarDataUrl) setAvatarPreview(data.avatarDataUrl);
+      updateProfileEditMode(true);
+      await upsertPublicProfile(user, collectProfileDraft(), true);
+      await renderProfileMarketplace(user.id, true);
+    }
+
+    async function hydratePublicProfile(userId) {
+      updateProfileEditMode(false);
+      const publicProfile = await fetchPublicProfile(userId);
+      const products = await fetchSellerProducts(userId);
+      const fallbackName = products[0]?.seller || 'Kidan seller';
+      const displayName = publicProfile?.display_name || publicProfile?.username || fallbackName;
+      document.getElementById('display-name').textContent = displayName;
+      document.getElementById('display-email').textContent = [publicProfile?.city, publicProfile?.region].filter(Boolean).join(', ') || 'Seller profile';
+      const badge = document.querySelector('.member-badge');
+      if (badge) badge.lastChild.textContent = ' Seller profile';
+      setValue('first-name', displayName);
+      setValue('username', publicProfile?.username || '');
+      setValue('bio', publicProfile?.bio || '');
+      setValue('city', publicProfile?.city || '');
+      setValue('region', publicProfile?.region || '');
+      await renderProfileMarketplace(userId, false, products);
+    }
+
+    function updateProfileEditMode(isOwner) {
+      const shell = document.getElementById('profile-shell');
+      shell?.classList.toggle('public-profile-mode', !isOwner);
+      const avatarButton = document.querySelector('.avatar-edit-btn');
+      if (avatarButton) avatarButton.hidden = !isOwner;
+      const avatarCircle = document.getElementById('avatarCircle');
+      if (avatarCircle) {
+        avatarCircle.style.cursor = isOwner ? 'pointer' : 'default';
+        avatarCircle.onclick = isOwner ? () => document.getElementById('avatar-input').click() : null;
+      }
+      const publicLink = document.getElementById('profile-public-link');
+      if (publicLink) {
+        const userId = kidanProfileSession?.user?.id || getProfileTargetUserId();
+        publicLink.hidden = !isOwner || !userId;
+        publicLink.href = `./profile.html?user=${encodeURIComponent(userId)}`;
+      }
     }
 
     function initializeProfileAvatar() {
@@ -1174,6 +1358,295 @@
       img.classList.add('loaded');
       const icon = document.querySelector('#avatarCircle svg');
       if (icon) icon.style.display = 'none';
+    }
+
+    function cleanPublicText(value, fallback, maxLength) {
+      const text = String(value || '').replace(/\s+/g, ' ').trim();
+      return (text || fallback || '').slice(0, maxLength);
+    }
+
+    function cleanUsername(value) {
+      return String(value || '')
+        .replace(/^@+/, '')
+        .replace(/[^a-zA-Z0-9_.-]/g, '')
+        .slice(0, 40)
+        .toLowerCase();
+    }
+
+    function getPublicDisplayName(user, draft) {
+      const fullName = [draft.firstName, draft.lastName].filter(Boolean).join(' ');
+      return cleanPublicText(fullName || draft.username || user.email || user.phone, 'Kidan member', 120);
+    }
+
+    async function fetchPublicProfile(userId) {
+      if (!userId) return null;
+      const client = await getSupabaseClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client
+          .from('profiles')
+          .select('user_id,display_name,username,bio,city,region,created_at,updated_at')
+          .eq('user_id', userId)
+          .maybeSingle();
+        return error ? null : data;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function upsertPublicProfile(user, draft, silent = false) {
+      const client = await getSupabaseClient();
+      if (!client || !user?.id) return silent ? '' : 'Profile backend is unavailable.';
+      const payload = {
+        user_id: user.id,
+        display_name: getPublicDisplayName(user, draft),
+        username: cleanUsername(draft.username),
+        bio: cleanPublicText(draft.bio, '', 600),
+        city: cleanPublicText(draft.city, '', 80),
+        region: cleanPublicText(draft.region, '', 80),
+        updated_at: new Date().toISOString()
+      };
+      try {
+        const { error } = await client.from('profiles').upsert(payload, { onConflict: 'user_id' });
+        if (!error) return '';
+        if (error.code === '23505') return 'This username is already taken.';
+        return silent ? '' : (error.message || 'Could not save public profile.');
+      } catch (error) {
+        return silent ? '' : 'Could not save public profile.';
+      }
+    }
+
+    async function fetchSellerProducts(userId) {
+      if (!userId) return [];
+      const client = await getSupabaseClient();
+      if (!client) {
+        return getAllProducts().filter((product) => product.sellerUserId === userId);
+      }
+      try {
+        const { data, error } = await client
+          .from('listings')
+          .select('id,title,brand,category,color,condition,price,description,seller_name,seller_user_id,status,tag,created_at,listing_photos(image_url,sort_order)')
+          .eq('seller_user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+        if (error) return [];
+        return (data || []).map(normalizeRemoteListing);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    async function fetchSellerReviews(userId) {
+      const client = await getSupabaseClient();
+      if (!client || !userId) return [];
+      try {
+        const { data, error } = await client
+          .from('seller_reviews')
+          .select('id,seller_user_id,buyer_user_id,order_id,listing_id,listing_title,rating,body,created_at')
+          .eq('seller_user_id', userId)
+          .order('created_at', { ascending: false });
+        if (error) return [];
+        const reviews = data || [];
+        const buyerIds = [...new Set(reviews.map((review) => review.buyer_user_id).filter(Boolean))];
+        const buyerNames = {};
+        if (buyerIds.length) {
+          const profiles = await client
+            .from('profiles')
+            .select('user_id,display_name,username')
+            .in('user_id', buyerIds);
+          (profiles.data || []).forEach((profile) => {
+            buyerNames[profile.user_id] = profile.display_name || profile.username || 'Buyer';
+          });
+        }
+        return reviews.map((review) => ({
+          ...review,
+          buyerName: buyerNames[review.buyer_user_id] || 'Buyer'
+        }));
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function getAverageRating(reviews) {
+      if (!reviews.length) return 0;
+      const total = reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+      return Math.round((total / reviews.length) * 10) / 10;
+    }
+
+    function setProfileStat(id, value) {
+      const node = document.getElementById(id);
+      if (node) node.textContent = String(value);
+    }
+
+    async function renderProfileMarketplace(userId, isOwner, prefetchedProducts = null) {
+      const remoteProducts = prefetchedProducts || await fetchSellerProducts(userId);
+      const products = isOwner
+        ? [...remoteProducts, ...getUserProducts()].filter((product, index, list) => product?.id && list.findIndex((item) => item.id === product.id) === index)
+        : remoteProducts;
+      const reviews = await fetchSellerReviews(userId);
+      const average = getAverageRating(reviews);
+
+      setProfileStat('profile-stat-listings', products.length);
+      setProfileStat('profile-stat-sold', '0');
+      setProfileStat('profile-stat-rating', average ? average.toFixed(1) : '-');
+      setProfileStat('profile-stat-reviews', reviews.length);
+
+      const listingsCopy = document.getElementById('profile-listings-copy');
+      if (listingsCopy) listingsCopy.textContent = isOwner ? 'Your active marketplace listings.' : 'Active listings from this seller.';
+      renderProfileListings(products);
+      renderProfileReviews(reviews);
+      await renderReviewEntryPoint(userId, isOwner, products, reviews);
+    }
+
+    function renderProfileListings(products) {
+      const root = document.getElementById('profile-listings-grid');
+      if (!root) return;
+      if (!products.length) {
+        root.innerHTML = '<div class="profile-empty-state">No active listings yet.</div>';
+        return;
+      }
+      root.innerHTML = products.map((product) => renderProductCard(product)).join('');
+      initializeWishlistLinks();
+      updateWishlistBadge();
+    }
+
+    function renderProfileReviews(reviews) {
+      const summary = document.getElementById('profile-review-summary');
+      const list = document.getElementById('profile-review-list');
+      if (!summary || !list) return;
+      const average = getAverageRating(reviews);
+      summary.innerHTML = reviews.length
+        ? `<strong>${average.toFixed(1)}/5</strong><span>${reviews.length} review${reviews.length === 1 ? '' : 's'}</span>`
+        : 'No reviews yet.';
+      list.innerHTML = reviews.length
+        ? reviews.map((review) => `
+            <article class="profile-review-item">
+              <header>
+                <div>
+                  <strong>${escapeHtml(review.buyerName || 'Buyer')}</strong>
+                  <span>${escapeHtml(review.listing_title || 'Marketplace listing')}</span>
+                </div>
+                <div>
+                  <div class="review-stars">${escapeHtml(String(review.rating || 0))}/5</div>
+                  <time>${escapeHtml(new Date(review.created_at).toLocaleDateString())}</time>
+                </div>
+              </header>
+              <p>${escapeHtml(review.body || 'No written comment.')}</p>
+            </article>
+          `).join('')
+        : '<div class="profile-empty-state">Buyers can review this seller after buying an item.</div>';
+    }
+
+    async function fetchEligibleReviewOrders(sellerUserId, products, reviews) {
+      const session = kidanProfileSession;
+      if (!session?.user?.id || session.user.id === sellerUserId) return [];
+      const client = await getSupabaseClient();
+      if (!client) return [];
+      const productIds = new Set(products.map((product) => product.id));
+      if (!productIds.size) return [];
+      const reviewedOrderIds = new Set(
+        reviews
+          .filter((review) => review.buyer_user_id === session.user.id)
+          .map((review) => review.order_id)
+      );
+      try {
+        const { data, error } = await client
+          .from('orders')
+          .select('id,listing_id,listing_title,status,created_at')
+          .eq('buyer_user_id', session.user.id)
+          .in('status', ['paid', 'pending_payment_setup'])
+          .order('created_at', { ascending: false });
+        if (error) return [];
+        return (data || [])
+          .filter((order) => productIds.has(order.listing_id) && !reviewedOrderIds.has(order.id))
+          .map((order) => ({
+            ...order,
+            product: products.find((product) => product.id === order.listing_id)
+          }));
+      } catch (error) {
+        return [];
+      }
+    }
+
+    async function renderReviewEntryPoint(sellerUserId, isOwner, products, reviews) {
+      const slot = document.getElementById('profile-review-form-slot');
+      if (!slot) return;
+      if (isOwner) {
+        slot.innerHTML = '<div class="profile-empty-state">Buyers will be able to leave reviews here after orders.</div>';
+        return;
+      }
+      if (!kidanProfileSession?.user) {
+        slot.innerHTML = '<div class="profile-empty-state">Sign in and buy an item from this seller to write a review.</div>';
+        return;
+      }
+      const eligibleOrders = await fetchEligibleReviewOrders(sellerUserId, products, reviews);
+      if (!eligibleOrders.length) {
+        slot.innerHTML = '<div class="profile-empty-state">You can write a review after buying an item from this seller.</div>';
+        return;
+      }
+      const requestedOrder = new URLSearchParams(window.location.search).get('reviewOrder') || '';
+      slot.innerHTML = `
+        <form class="profile-review-form" id="profile-review-form">
+          <div class="field-grid">
+            <div class="field">
+              <label for="review-order">Purchased item</label>
+              <select id="review-order" required>
+                ${eligibleOrders.map((order) => `<option value="${escapeHtml(order.id)}"${order.id === requestedOrder ? ' selected' : ''}>${escapeHtml(order.listing_title || order.product?.title || 'Marketplace listing')}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label for="review-rating">Rating</label>
+              <select id="review-rating" required>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Good</option>
+                <option value="3">3 - Okay</option>
+                <option value="2">2 - Poor</option>
+                <option value="1">1 - Bad</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label for="review-body">Review</label>
+            <textarea id="review-body" maxlength="1000" placeholder="Share what happened with this purchase."></textarea>
+          </div>
+          <button class="save-btn" type="submit">Publish Review</button>
+        </form>
+      `;
+      document.getElementById('profile-review-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await submitSellerReview(sellerUserId, eligibleOrders);
+      });
+    }
+
+    async function submitSellerReview(sellerUserId, eligibleOrders) {
+      const session = kidanProfileSession;
+      if (!session?.user?.id) return showToast('Sign in first.');
+      const orderId = document.getElementById('review-order')?.value || '';
+      const order = eligibleOrders.find((item) => item.id === orderId);
+      const rating = Number(document.getElementById('review-rating')?.value || 5);
+      const body = cleanPublicText(document.getElementById('review-body')?.value, '', 1000);
+      if (!order || !rating) return showToast('Choose a purchased item.');
+      const client = await getSupabaseClient();
+      if (!client) return showToast('Reviews are unavailable right now.');
+      try {
+        const { error } = await client.from('seller_reviews').insert({
+          seller_user_id: sellerUserId,
+          buyer_user_id: session.user.id,
+          order_id: order.id,
+          listing_id: order.listing_id,
+          listing_title: order.listing_title || order.product?.title || 'Marketplace listing',
+          rating,
+          body
+        });
+        if (error) {
+          showToast(error.code === '23505' ? 'You already reviewed this order.' : error.message);
+          return;
+        }
+        showToast('Review published');
+        await hydratePublicProfile(sellerUserId);
+      } catch (error) {
+        showToast('Could not publish review.');
+      }
     }
 
     async function saveProfile() {
@@ -1204,7 +1677,10 @@
 
       const { error } = await client.auth.updateUser(updates);
       if (error) return showToast(error.message);
+      const profileError = await upsertPublicProfile(user, draft);
+      if (profileError) return showToast(profileError);
       document.getElementById('new-password').value = '';
+      await renderProfileMarketplace(user.id, true);
       showToast(updates.email ? 'Profile saved. Confirm the new email if Supabase asks.' : 'Profile saved');
     }
 

@@ -109,6 +109,30 @@ create table if not exists public.orders (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null default 'Kidan member',
+  username text not null default '',
+  bio text not null default '',
+  city text not null default '',
+  region text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.seller_reviews (
+  id uuid primary key default gen_random_uuid(),
+  seller_user_id uuid not null references auth.users(id) on delete cascade,
+  buyer_user_id uuid not null references auth.users(id) on delete cascade,
+  order_id uuid not null references public.orders(id) on delete cascade,
+  listing_id text not null,
+  listing_title text not null,
+  rating int not null check (rating between 1 and 5),
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  unique (buyer_user_id, order_id)
+);
+
 alter table public.orders
   add column if not exists buyer_user_id uuid,
   add column if not exists buyer_email text not null default '',
@@ -127,6 +151,18 @@ alter table public.wishlist_items
 alter table public.chats
   add column if not exists buyer_user_id uuid,
   add column if not exists buyer_session_id text not null default '';
+
+alter table public.profiles
+  add column if not exists display_name text not null default 'Kidan member',
+  add column if not exists username text not null default '',
+  add column if not exists bio text not null default '',
+  add column if not exists city text not null default '',
+  add column if not exists region text not null default '',
+  add column if not exists updated_at timestamptz not null default now();
+
+alter table public.seller_reviews
+  add column if not exists listing_title text not null default '',
+  add column if not exists body text not null default '';
 
 do $$
 begin
@@ -158,6 +194,25 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'orders_safe_amount') then
     alter table public.orders add constraint orders_safe_amount check (amount between 0 and 10000);
   end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'profiles_safe_text_lengths') then
+    alter table public.profiles add constraint profiles_safe_text_lengths check (
+      char_length(display_name) between 1 and 120
+      and char_length(username) <= 40
+      and char_length(bio) <= 600
+      and char_length(city) <= 80
+      and char_length(region) <= 80
+    );
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'seller_reviews_safe_text_lengths') then
+    alter table public.seller_reviews add constraint seller_reviews_safe_text_lengths check (
+      char_length(listing_id) between 1 and 120
+      and char_length(listing_title) between 1 and 160
+      and char_length(body) <= 1000
+      and seller_user_id <> buyer_user_id
+    );
+  end if;
 end $$;
 
 grant usage on schema public to anon, authenticated;
@@ -169,6 +224,8 @@ revoke all on public.messages from anon, authenticated;
 revoke all on public.support_threads from anon, authenticated;
 revoke all on public.support_messages from anon, authenticated;
 revoke all on public.orders from anon, authenticated;
+revoke all on public.profiles from anon, authenticated;
+revoke all on public.seller_reviews from anon, authenticated;
 grant select on public.listings to anon, authenticated;
 grant insert, delete on public.listings to authenticated;
 grant select on public.listing_photos to anon, authenticated;
@@ -177,6 +234,10 @@ grant select, insert, delete on public.wishlist_items to authenticated;
 grant select, insert, update on public.chats to authenticated;
 grant select, insert on public.messages to authenticated;
 grant select, insert on public.orders to authenticated;
+grant select on public.profiles to anon, authenticated;
+grant insert, update on public.profiles to authenticated;
+grant select on public.seller_reviews to anon, authenticated;
+grant insert on public.seller_reviews to authenticated;
 grant select, insert, update, delete on public.listings to service_role;
 grant select, insert, update, delete on public.listing_photos to service_role;
 grant select, insert, update, delete on public.wishlist_items to service_role;
@@ -185,6 +246,8 @@ grant select, insert, update, delete on public.messages to service_role;
 grant select, insert, update, delete on public.support_threads to service_role;
 grant select, insert, update, delete on public.support_messages to service_role;
 grant select, insert, update on public.orders to service_role;
+grant select, insert, update, delete on public.profiles to service_role;
+grant select, insert, update, delete on public.seller_reviews to service_role;
 
 alter table public.listings enable row level security;
 alter table public.listing_photos enable row level security;
@@ -194,6 +257,8 @@ alter table public.messages enable row level security;
 alter table public.support_threads enable row level security;
 alter table public.support_messages enable row level security;
 alter table public.orders enable row level security;
+alter table public.profiles enable row level security;
+alter table public.seller_reviews enable row level security;
 
 drop policy if exists "Listings are publicly readable" on public.listings;
 create policy "Listings are publicly readable"
@@ -353,6 +418,50 @@ on public.orders for update
 using ((select auth.role()) = 'service_role')
 with check ((select auth.role()) = 'service_role');
 
+drop policy if exists "Profiles are publicly readable" on public.profiles;
+create policy "Profiles are publicly readable"
+on public.profiles for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Users can create own profile" on public.profiles;
+create policy "Users can create own profile"
+on public.profiles for insert
+to authenticated
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "Users can update own profile" on public.profiles;
+create policy "Users can update own profile"
+on public.profiles for update
+to authenticated
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "Seller reviews are publicly readable" on public.seller_reviews;
+create policy "Seller reviews are publicly readable"
+on public.seller_reviews for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Buyers can review purchased listings" on public.seller_reviews;
+create policy "Buyers can review purchased listings"
+on public.seller_reviews for insert
+to authenticated
+with check (
+  buyer_user_id = (select auth.uid())
+  and seller_user_id <> (select auth.uid())
+  and exists (
+    select 1
+    from public.orders
+    join public.listings on listings.id::text = orders.listing_id
+    where orders.id = seller_reviews.order_id
+      and orders.buyer_user_id = (select auth.uid())
+      and orders.listing_id = seller_reviews.listing_id
+      and listings.seller_user_id = seller_reviews.seller_user_id
+      and orders.status in ('paid', 'pending_payment_setup')
+  )
+);
+
 create index if not exists listings_brand_idx on public.listings (brand);
 create index if not exists listings_tag_idx on public.listings (tag);
 create index if not exists listing_photos_listing_id_idx on public.listing_photos (listing_id);
@@ -371,6 +480,11 @@ create index if not exists orders_listing_id_idx on public.orders (listing_id);
 create index if not exists orders_status_idx on public.orders (status);
 create index if not exists orders_buyer_user_id_idx on public.orders (buyer_user_id);
 create index if not exists orders_delivery_status_idx on public.orders (delivery_status);
+create unique index if not exists profiles_username_unique_idx on public.profiles (lower(username)) where username <> '';
+create index if not exists seller_reviews_seller_user_id_idx on public.seller_reviews (seller_user_id);
+create index if not exists seller_reviews_buyer_user_id_idx on public.seller_reviews (buyer_user_id);
+create index if not exists seller_reviews_order_id_idx on public.seller_reviews (order_id);
+create index if not exists seller_reviews_listing_id_idx on public.seller_reviews (listing_id);
 
 drop policy if exists "Listing photos storage public read" on storage.objects;
 

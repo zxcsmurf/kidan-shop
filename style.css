@@ -2078,6 +2078,19 @@ kbd {
   font-size: 12px;
 }
 
+.seller-profile-link {
+  width: fit-content;
+  color: var(--color-accent);
+  font: 800 12px var(--font-body);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.seller-profile-link:hover {
+  color: var(--color-accent-hover);
+}
+
 .product-actions {
   display: flex;
   gap: 12px;

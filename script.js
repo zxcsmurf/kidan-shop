@@ -1304,6 +1304,7 @@ function normalizeRemoteListing(row) {
         photos: sortedPhotos.length ? sortedPhotos : [image],
         tag: row.tag || normalizeText(row.condition || 'used') || 'used',
         seller: row.seller_name || 'Seller',
+        sellerUserId: row.seller_user_id || '',
         description: row.description || 'Seller did not add a description yet.',
         remote: true,
         createdAt: row.created_at
@@ -1318,7 +1319,7 @@ async function fetchRemoteProducts() {
     try {
         response = await client
             .from('listings')
-            .select('id,title,brand,category,color,condition,price,description,seller_name,status,tag,created_at,listing_photos(image_url,sort_order)')
+            .select('id,title,brand,category,color,condition,price,description,seller_name,seller_user_id,status,tag,created_at,listing_photos(image_url,sort_order)')
             .eq('status', 'active')
             .order('created_at', { ascending: false });
     } catch (error) {
@@ -1385,7 +1386,7 @@ async function createRemoteListing(product, photoFiles = []) {
                 seller_user_id: session.user.id,
                 seller_session_id: getKidanSessionId()
             })
-            .select('id,title,brand,category,color,condition,price,description,seller_name,status,tag,created_at')
+            .select('id,title,brand,category,color,condition,price,description,seller_name,seller_user_id,status,tag,created_at')
             .single();
     } catch (error) {
         return null;
@@ -1845,6 +1846,9 @@ function saveProductFromListing(listing) {
     setUserProducts(products);
     updateProductStatsUI();
     renderHomeProducts();
+    if (typeof window.refreshKidanProfileMarketplace === 'function') {
+        window.refreshKidanProfileMarketplace();
+    }
 
     createRemoteListing(product, listing.photoFiles || []).then((remoteProduct) => {
         if (!remoteProduct) return;
@@ -1852,6 +1856,9 @@ function saveProductFromListing(listing) {
         const remoteProducts = getRemoteProducts().filter((item) => item.id !== remoteProduct.id);
         setRemoteProducts([remoteProduct, ...remoteProducts]);
         refreshDynamicProductViews();
+        if (typeof window.refreshKidanProfileMarketplace === 'function') {
+            window.refreshKidanProfileMarketplace();
+        }
     }).catch(() => {});
 
     return product;
@@ -2275,6 +2282,7 @@ function renderPaymentResultPage() {
     const status = page.getAttribute('data-payment-status') || 'success';
     const orderId = new URLSearchParams(window.location.search).get('order') || '';
     const order = getLocalOrder(orderId);
+    const orderProduct = getProductById(order?.listing_id);
     const isSuccess = status === 'success';
     const title = isSuccess ? 'Pending order created' : 'Checkout cancelled';
     const customMessage = new URLSearchParams(window.location.search).get('message');
@@ -2294,6 +2302,7 @@ function renderPaymentResultPage() {
           <div class="payment-result-actions">
             <a href="./view-all.html" class="view-all-btn">Browse listings</a>
             <a href="./chats.html" class="checkout-secondary">Open chats</a>
+            ${isSuccess && orderProduct?.sellerUserId ? `<a href="./profile.html?user=${encodeURIComponent(orderProduct.sellerUserId)}&reviewOrder=${encodeURIComponent(orderId)}" class="checkout-secondary">Review seller</a>` : ''}
           </div>
         </section>
       </main>
@@ -2647,6 +2656,7 @@ function renderProductDetailPage() {
 
     const photos = (Array.isArray(product.photos) && product.photos.length ? product.photos : [product.image]).filter(Boolean);
     const brandPage = kidanBrandPages[canonicalBrandName(product.brand)] || 'view-all.html';
+    const sellerProfileUrl = product.sellerUserId ? `./profile.html?user=${encodeURIComponent(product.sellerUserId)}` : '';
 
     document.body.innerHTML = renderSimplePageShell(`
       <main class="product-detail-main">
@@ -2674,6 +2684,7 @@ function renderProductDetailPage() {
             <section class="seller-panel">
               <span>Seller</span>
               <strong>${escapeHtml(product.seller || 'Seller')}</strong>
+              ${sellerProfileUrl ? `<a class="seller-profile-link" href="${sellerProfileUrl}">View seller profile</a>` : ''}
             </section>
             <div class="product-actions">
               <a class="config-apply buy-now-btn" id="buy-now-link" href="./checkout.html?id=${encodeURIComponent(product.id)}">Buy now</a>
