@@ -503,7 +503,7 @@ function renderPhotoPreviews(files, previewRoot) {
         card.className = 'photo-preview-card';
 
         const image = document.createElement('img');
-        image.alt = file.name || 'Listing photo preview';
+        image.alt = file.name ? `Preview of selected listing photo: ${file.name}` : 'Preview of selected listing photo';
         image.src = URL.createObjectURL(file);
         image.addEventListener('load', () => URL.revokeObjectURL(image.src), { once: true });
 
@@ -1527,7 +1527,7 @@ function renderProductCard(product) {
     return `
       <article class="product-card" data-product-id="${escapeHtml(product.id)}">
         <a class="product-image-link" href="${productUrl}" aria-label="${escapeHtml(product.title)}">
-          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" loading="lazy">
+          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)} listing photo" loading="lazy">
           <span class="product-condition">${escapeHtml(product.condition)}</span>
         </a>
         <div class="product-info">
@@ -2232,7 +2232,7 @@ async function renderCheckoutPage() {
         <a class="brand-back-link product-back" href="./product.html?id=${encodeURIComponent(product.id)}">Back to listing</a>
         <section class="checkout-layout">
           <aside class="checkout-summary">
-            <img src="${escapeHtml(photos[0])}" alt="${escapeHtml(product.title)}">
+            <img src="${escapeHtml(photos[0])}" alt="${escapeHtml(product.title)} checkout item photo">
             <div>
               <span class="header-eyebrow">Secure checkout preview</span>
               <h1>${escapeHtml(product.title)}</h1>
@@ -2683,7 +2683,7 @@ function renderProductDetailPage() {
         <a class="brand-back-link product-back" href="./view-all.html">Back to listings</a>
         <section class="product-detail">
           <div class="product-gallery">
-            <img class="product-main-photo" id="product-main-photo" src="${escapeHtml(photos[0])}" alt="${escapeHtml(product.title)}">
+            <img class="product-main-photo" id="product-main-photo" src="${escapeHtml(photos[0])}" alt="${escapeHtml(product.title)} main product photo">
             <div class="product-thumbs">
               ${photos.map((photo, index) => `<button type="button" class="product-thumb${index === 0 ? ' active' : ''}" data-photo="${escapeHtml(photo)}"><img src="${escapeHtml(photo)}" alt="${escapeHtml(product.title)} photo ${index + 1}"></button>`).join('')}
             </div>
@@ -2803,7 +2803,7 @@ function renderChatListItem(chat, activeId) {
     const last = chat.messages[chat.messages.length - 1];
     return `
       <a class="chat-list-item${chat.id === activeId ? ' active' : ''}" href="./chats.html?chat=${encodeURIComponent(chat.id)}">
-        <img src="${escapeHtml(product?.image || 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=200&q=80')}" alt="">
+        <img src="${escapeHtml(product?.image || 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=200&q=80')}" alt="${escapeHtml(chat.productTitle)} chat item thumbnail">
         <div>
           <strong>${escapeHtml(chat.productTitle)}</strong>
           <span>${escapeHtml(last?.text || 'No messages yet')}</span>
