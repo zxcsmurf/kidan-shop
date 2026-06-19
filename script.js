@@ -1550,11 +1550,21 @@ function renderProductGrid(root, products, emptyMessage = 'No items match these 
     if (!root) return;
 
     if (!products.length) {
+        const isWishlist = root.id === 'wishlist-products';
         root.innerHTML = `
-          <div class="empty-state">
-            <h2>No items found</h2>
+          <div class="empty-state${isWishlist ? ' empty-state--wishlist' : ''}">
+            <h2>${isWishlist ? 'Your wishlist is empty' : 'No items found'}</h2>
             <p>${escapeHtml(emptyMessage)}</p>
-            <a class="view-all-btn" href="./index.html">Back to shop</a>
+            ${isWishlist ? `
+              <ul class="empty-state-tips">
+                <li>Tap the heart on any listing to save it here.</li>
+                <li>Saved items stay on this device and sync when sign-in is available.</li>
+              </ul>
+              <div class="empty-state-actions">
+                <a class="view-all-btn" href="./view-all.html">Browse all listings</a>
+                <a class="brand-back-link" href="./index.html">Back to home</a>
+              </div>
+            ` : '<a class="view-all-btn" href="./index.html">Back to shop</a>'}
           </div>
         `;
         initializeMotionSystem(root);
@@ -2775,10 +2785,15 @@ async function renderChatsPage() {
         </section>
         <section class="chat-layout">
           <aside class="chat-list">
-            ${chats.length ? chats.map((chat) => renderChatListItem(chat, activeChat?.id)).join('') : '<div class="chat-empty-small">No chats yet. Open a listing and contact a seller.</div>'}
+            ${chats.length ? chats.map((chat) => renderChatListItem(chat, activeChat?.id)).join('') : `
+              <div class="chat-empty-small">
+                <strong>No chats yet</strong>
+                <span>Open a listing and press Contact seller to start a conversation.</span>
+              </div>
+            `}
           </aside>
           <section class="chat-thread">
-            ${activeChat ? renderChatThread(activeChat) : '<div class="wishlist-empty"><h2>No conversation selected</h2><p>Start from any listing by pressing Contact seller.</p><a class="view-all-btn" href="./view-all.html">Browse listings</a></div>'}
+            ${activeChat ? renderChatThread(activeChat) : '<div class="wishlist-empty"><h2>No conversation selected</h2><p>Messages appear here after you contact a seller about a listing.</p><div class="empty-state-actions"><a class="view-all-btn" href="./view-all.html">Browse listings</a><a class="brand-back-link" href="./wishlist.html">View wishlist</a></div></div>'}
           </section>
         </section>
       </main>

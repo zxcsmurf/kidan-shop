@@ -1983,6 +1983,25 @@ kbd {
   color: var(--color-text-secondary);
 }
 
+.empty-state-tips {
+  display: inline-grid;
+  gap: 6px;
+  margin: 0 0 20px;
+  padding-left: 18px;
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.empty-state-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .product-info h3 a {
   color: inherit;
   text-decoration: none;
@@ -2184,7 +2203,17 @@ kbd {
   font-size: 13px;
 }
 
-.chat-empty-small { padding: 18px; }
+.chat-empty-small {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  line-height: 1.45;
+}
+
+.chat-empty-small strong {
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
 
 .chat-thread {
   min-height: 520px;

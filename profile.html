@@ -321,6 +321,23 @@
       background: #fbfaff;
       font-size: 14px;
       line-height: 1.55;
+      grid-column: 1 / -1;
+    }
+
+    .profile-empty-state strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #111;
+      font-size: 15px;
+    }
+
+    .profile-empty-state p {
+      margin: 0 0 12px;
+    }
+
+    .profile-empty-state ul {
+      margin: 0;
+      padding-left: 18px;
     }
 
     .review-summary-row {
@@ -884,7 +901,7 @@
           <a class="btn-secondary" id="profile-public-link" href="./profile.html" hidden>Public link</a>
         </div>
         <div class="profile-listings-grid" id="profile-listings-grid">
-          <div class="profile-empty-state">Loading listings...</div>
+          <div class="profile-empty-state"><strong>Loading listings...</strong><p>Checking this profile's active marketplace items.</p></div>
         </div>
       </div>
 
@@ -1487,16 +1504,25 @@
 
       const listingsCopy = document.getElementById('profile-listings-copy');
       if (listingsCopy) listingsCopy.textContent = isOwner ? 'Your active marketplace listings.' : 'Active listings from this seller.';
-      renderProfileListings(products);
+      renderProfileListings(products, isOwner);
       renderProfileReviews(reviews);
       await renderReviewEntryPoint(userId, isOwner, products, reviews);
     }
 
-    function renderProfileListings(products) {
+    function renderProfileListings(products, isOwner) {
       const root = document.getElementById('profile-listings-grid');
       if (!root) return;
       if (!products.length) {
-        root.innerHTML = '<div class="profile-empty-state">No active listings yet.</div>';
+        root.innerHTML = `
+          <div class="profile-empty-state">
+            <strong>${isOwner ? 'No active listings yet' : 'This seller has no active listings yet'}</strong>
+            <p>${isOwner ? 'Create your first listing from the Selling card above. Add clear photos, condition notes, and a fair price.' : 'Check back later or browse the marketplace for similar items.'}</p>
+            <ul>
+              <li>${isOwner ? 'Use + Add Listing when you are ready to sell.' : 'Open Browse listings to keep shopping.'}</li>
+              <li>Completed sales and reviews will appear here over time.</li>
+            </ul>
+          </div>
+        `;
         return;
       }
       root.innerHTML = products.map((product) => renderProductCard(product)).join('');
