@@ -912,6 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeWishlistLinks();
     updateWishlistBadge();
     updateProductStatsUI();
+    renderInfoPage();
     renderBrandPage();
     renderCollectionPage();
     renderWishlistPage();
@@ -1946,6 +1947,154 @@ function updateWishlistBadge() {
     syncWishlistButtons();
 }
 
+const kidanInfoPages = {
+    privacy: {
+        eyebrow: 'Privacy',
+        title: 'Privacy Policy',
+        intro: 'This page explains the basic information Kidan Shop may use to operate the marketplace experience.',
+        sections: [
+            ['Information we use', 'We may use account, listing, order, wishlist, chat, and support details that you choose to provide while using the shop.'],
+            ['How it is used', 'Information is used to run marketplace features, answer support requests, improve safety, and keep buying and selling records understandable.'],
+            ['Your choices', 'Do not share sensitive information in listings or chats. Contact us if you need help with account or privacy questions.']
+        ]
+    },
+    terms: {
+        eyebrow: 'Terms',
+        title: 'Terms of Service',
+        intro: 'These basic terms describe expected use of Kidan Shop. They are a simple project policy, not a substitute for legal advice.',
+        sections: [
+            ['Marketplace use', 'Use the shop honestly, list items accurately, and do not post illegal, unsafe, misleading, or infringing content.'],
+            ['Orders and listings', 'Sellers are responsible for clear item descriptions, photos, condition notes, and communication with buyers.'],
+            ['Changes', 'Kidan Shop may update these terms as the service changes. Continued use means you accept the current version.']
+        ]
+    },
+    returns: {
+        eyebrow: 'Returns',
+        title: 'Return & Refund Policy',
+        intro: 'Return and refund handling can depend on the item, seller, and order status. Contact the shop if something goes wrong.',
+        sections: [
+            ['Before buying', 'Review photos, condition, sizing, and seller notes before placing an order. Ask questions if anything is unclear.'],
+            ['Problems with an order', 'If an item is not as described or there is a delivery issue, contact support with the order details as soon as possible.'],
+            ['Refund review', 'Refunds are reviewed case by case. Do not send items back until the return path is confirmed.']
+        ]
+    },
+    shipping: {
+        eyebrow: 'Shipping',
+        title: 'Shipping Policy',
+        intro: 'Shipping details may vary by seller, item, and destination. Listings should make delivery expectations clear before purchase.',
+        sections: [
+            ['Processing', 'Sellers should prepare accepted orders promptly and keep buyers updated about timing.'],
+            ['Delivery', 'Delivery method, region, tracking, and cost can vary. Confirm details in the listing or seller chat.'],
+            ['Support', 'If tracking or delivery information is missing, contact Kidan Shop with the order and listing details.']
+        ]
+    },
+    contact: {
+        eyebrow: 'Contact',
+        title: 'Contact Kidan Shop',
+        intro: 'For questions about orders, listings, accounts, or support, use the contact details below.',
+        sections: [
+            ['Email', '<a href="mailto:kidan.shop.co@gmail.com">kidan.shop.co@gmail.com</a>'],
+            ['Phone', '<a href="tel:+420723421965">+420723421965</a>'],
+            ['Location', 'Prague, Czech Republic']
+        ]
+    },
+    about: {
+        eyebrow: 'About',
+        title: 'About Kidan Shop',
+        intro: 'Kidan Shop is a fashion marketplace concept for discovering streetwear, sneakers, vintage finds, and independent seller listings.',
+        sections: [
+            ['What we focus on', 'A simple shopping experience, clear listings, useful seller profiles, and safer buyer-seller communication.'],
+            ['For sellers', 'Create clear listings with good photos, accurate condition notes, and fair pricing.'],
+            ['For buyers', 'Browse brands, save favorites, and contact sellers before purchasing when you need more details.']
+        ]
+    }
+};
+
+function getInfoPageFooter() {
+    return `
+      <footer id="site-footer">
+        <div class="footer-inner">
+          <div class="footer-col">
+            <span class="footer-logo">Kidan Shop</span>
+            <p class="footer-tagline">Premium & second-hand fashion.<br>New arrivals every day.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Navigation</h4>
+            <ul>
+              <li><a href="./index.html">Home</a></li>
+              <li><a href="./view-all.html">Categories</a></li>
+              <li><a href="./new.html">New Arrivals</a></li>
+              <li><a href="./sale.html">Sale</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Contact Us</h4>
+            <ul>
+              <li>Email: <a href="mailto:kidan.shop.co@gmail.com">kidan.shop.co@gmail.com</a></li>
+              <li>Phone: <a href="tel:+420723421965">+420723421965</a></li>
+              <li>Location: Prague, Czech Republic</li>
+              <li>Hours: Mon-Fri, 9:00-18:00</li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Info</h4>
+            <ul>
+              <li><a href="./about.html">About</a></li>
+              <li><a href="./contact.html">Contact</a></li>
+              <li><a href="./privacy.html">Privacy Policy</a></li>
+              <li><a href="./terms.html">Terms of Service</a></li>
+              <li><a href="./returns.html">Return Policy</a></li>
+              <li><a href="./shipping.html">Shipping Policy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2025 Kidan Shop. All rights reserved.</span>
+          <span>Made with care in Czech Republic</span>
+        </div>
+      </footer>
+    `;
+}
+
+function renderInfoPage() {
+    const page = document.querySelector('[data-info-page]');
+    if (!page) return;
+
+    const key = page.getAttribute('data-info-page') || '';
+    const info = kidanInfoPages[key] || kidanInfoPages.about;
+    document.title = `${info.title} | Kidan Shop`;
+    document.body.innerHTML = renderSimplePageShell(`
+      <main class="brand-page-main info-page-main">
+        <section class="brand-hero info-hero">
+          <div class="brand-hero-inner">
+            <div>
+              <a class="brand-back-link" href="./index.html">Back to home</a>
+              <span class="header-eyebrow">${escapeHtml(info.eyebrow)}</span>
+              <h1>${escapeHtml(info.title)}</h1>
+              <p>${escapeHtml(info.intro)}</p>
+            </div>
+          </div>
+        </section>
+        <section class="info-page-card">
+          ${info.sections.map(([heading, body]) => `
+            <article>
+              <h2>${escapeHtml(heading)}</h2>
+              <p>${body}</p>
+            </article>
+          `).join('')}
+          <article>
+            <h2>Contact</h2>
+            <p>Questions? Email <a href="mailto:kidan.shop.co@gmail.com">kidan.shop.co@gmail.com</a> or call <a href="tel:+420723421965">+420723421965</a>.</p>
+          </article>
+        </section>
+      </main>
+      ${getInfoPageFooter()}
+    `);
+    initializeBrandThemeToggle();
+    updateWishlistBadge();
+    initializeQualityNavigation();
+}
+
 function renderBrandPage() {
     const page = document.querySelector('[data-brand-page]');
     if (!page) return;
@@ -1953,7 +2102,6 @@ function renderBrandPage() {
     const brandName = page.getAttribute('data-brand-name') || 'Brand';
     kidanCurrentBrandName = brandName;
     const safeBrandName = escapeHtml(brandName);
-    const initial = escapeHtml(brandName.charAt(0).toUpperCase());
 
     document.body.innerHTML = `
       <nav class="filter-bar" aria-label="Brand navigation" style="position:sticky;top:0;z-index:9999;">
@@ -1994,7 +2142,6 @@ function renderBrandPage() {
               <h1>${safeBrandName}</h1>
               <p>Browse only ${safeBrandName} listings. Use the configurator to choose max price, item type, and color before new listings are added.</p>
             </div>
-            <div class="brand-mark" aria-hidden="true"><span>${initial}</span></div>
           </div>
         </section>
 
@@ -2005,19 +2152,19 @@ function renderBrandPage() {
                 <h2>${safeBrandName} Listings</h2>
                 <p class="result-summary" id="brand-filter-summary">All items, any color, $0-$500. No listings yet.</p>
               </div>
-              <button type="button" class="config-open-btn" id="config-open">Open filters</button>
+              <button type="button" class="config-open-btn" id="config-open" aria-controls="config-drawer" aria-expanded="false">Open filters</button>
             </div>
             <div class="collection-grid collection-grid-inline" id="brand-products" aria-label="${safeBrandName} listings"></div>
           </section>
         </section>
 
-        <div class="config-drawer" id="config-drawer" aria-hidden="true">
+        <div class="config-drawer" id="config-drawer" aria-hidden="true" hidden>
           <div class="config-drawer-backdrop" data-config-close></div>
-          <aside class="config-drawer-panel" aria-label="Listing configurator">
+          <aside class="config-drawer-panel" aria-label="Listing filters">
             <div class="config-drawer-head">
               <div>
                 <p class="modal-eyebrow">Filters</p>
-                <h2>Configurator</h2>
+                <h2>Listing filters</h2>
               </div>
               <button type="button" class="modal-close" aria-label="Close filters" data-config-close>×</button>
             </div>
@@ -2128,7 +2275,6 @@ function renderCollectionPage() {
               <h1>${safeTitle}</h1>
               <p>${safeSubtitle}</p>
             </div>
-            <div class="brand-mark" aria-hidden="true"><span>${escapeHtml(title.charAt(0).toUpperCase())}</span></div>
           </div>
         </section>
         <section class="collection-grid" id="collection-products" aria-label="${safeTitle}"></section>
@@ -2171,7 +2317,6 @@ function renderWishlistPage() {
               <h1>Wishlist</h1>
               <p>Items you like are collected here so you can return to them later.</p>
             </div>
-            <div class="brand-mark" aria-hidden="true"><span>W</span></div>
           </div>
         </section>
         ${cards}
@@ -2780,7 +2925,6 @@ async function renderChatsPage() {
               <h1>Chats</h1>
               <p>Talk with sellers about listings, photos, condition, pickup, and shipping.</p>
             </div>
-            <div class="brand-mark" aria-hidden="true"><span>C</span></div>
           </div>
         </section>
         <section class="chat-layout">
@@ -2961,7 +3105,6 @@ async function renderAdminSupportPage() {
               <h1>Support Inbox</h1>
               <p>Sign in, choose a customer conversation, and answer directly from the browser.</p>
             </div>
-            <div class="brand-mark" aria-hidden="true"><span>S</span></div>
           </div>
         </section>
         <section id="admin-support-root" class="admin-support-shell">
@@ -3337,18 +3480,24 @@ function initializeBrandConfigurator(brandName = '') {
 
     drawer?.classList.remove('is-open');
     drawer?.setAttribute('aria-hidden', 'true');
+    if (drawer) drawer.hidden = true;
     document.body.classList.remove('modal-open');
 
     function openDrawer() {
+        if (drawer) drawer.hidden = false;
         drawer?.classList.add('is-open');
         drawer?.setAttribute('aria-hidden', 'false');
         document.body.classList.add('modal-open');
+        openBtn?.setAttribute('aria-expanded', 'true');
     }
 
     function closeDrawer() {
         drawer?.classList.remove('is-open');
         drawer?.setAttribute('aria-hidden', 'true');
+        if (drawer) drawer.hidden = true;
         document.body.classList.remove('modal-open');
+        openBtn?.setAttribute('aria-expanded', 'false');
+        openBtn?.focus();
     }
 
     function setActive(buttons, attr, value) {

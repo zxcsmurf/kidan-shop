@@ -58,6 +58,7 @@
 - Task 7 plan: verify existing `scripts/check-local-links.js` and npm wiring, run link/check/build commands, then mark the task complete if the local-link guard already covers HTML href/src targets.
 - Task 8 plan: improve only local UI empty-state copy/actions for wishlist, chats, and profile listings; avoid Supabase access or data/schema changes; validate with syntax/check/build.
 - Task 9 plan: add maintainability comments around origin allow-listing and rate-limit buckets in API code only; do not change runtime logic, secrets, database schema, or remote access.
+- Footer/brand fix plan: inspect only relevant frontend files; keep work local; do not use Supabase or remote database access; fix brand filter default/close state, remove decorative `brand-mark`, add real footer info pages, and update contact links.
 
 ## Выполненная автономная работа
 
@@ -75,6 +76,8 @@
 - Улучшены пустые состояния для wishlist, chats и profile listings: добавлены более понятные заголовки, подсказки и безопасные локальные CTA без изменения данных или удалённого доступа.
 - Добавлены поддерживающие комментарии к API origin allow-list и rate-limit checks в `api/security-utils.js`, `api/create-checkout-session.js`, `api/support.js`, `api/support-admin.js`; поведение кода не менялось.
 - Создан финальный отчёт автономной работы: `HERMES_REPORT.md`.
+- Footer/brand fixes completed: brand filter drawer starts hidden/closed and is closable; decorative `brand-mark` placeholders and unused CSS were removed; real info pages were added for privacy, terms, returns, shipping, contact, and about; footer links now route to real pages; footer/contact details use `kidan.shop.co@gmail.com` and `+420****1965`; fake `+1 555` placeholder was removed from profile phone input.
+- Files changed for footer/brand fixes: `script.js`, `style.css`, `index.html`, `profile.html`, `privacy.html`, `terms.html`, `returns.html`, `shipping.html`, `contact.html`, `about.html`, `AGENT_NOTES.md`.
 
 ## Последние проверки
 
@@ -83,6 +86,7 @@
 - `npm run check` — passed.
 - `npm run build` — passed.
 - `node` inline parse check for `profile.html` scripts — passed (`2` inline script blocks).
+- Footer/brand fix checks: `npm run check` — passed; `npm run build` — passed; targeted searches for `brand-mark`, old fake footer contacts, and placeholder footer links — passed (`0` matches).
 
 ## Активные блокеры
 

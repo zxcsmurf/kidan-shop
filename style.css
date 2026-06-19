@@ -1531,24 +1531,6 @@ kbd {
   margin: 0;
 }
 
-.brand-mark {
-  width: 168px;
-  height: 168px;
-  border-radius: 24px;
-  background: #fff;
-  border: 1px solid rgba(139, 92, 246, 0.18);
-  display: grid;
-  place-items: center;
-  box-shadow: 0 18px 52px rgba(124, 58, 237, 0.12);
-}
-
-.brand-mark span {
-  font-family: var(--font-heading);
-  font-size: 64px;
-  font-weight: 900;
-  color: var(--color-accent);
-}
-
 .brand-config-section {
   width: min(1180px, calc(100% - 48px));
   margin: 0 auto 76px;
@@ -1657,17 +1639,43 @@ kbd {
   margin: -8px 0 20px;
 }
 
-.empty-listing-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+.info-page-main {
+  padding-bottom: 76px;
 }
 
-.empty-listing-card {
-  min-height: 220px;
-  border: 1px dashed rgba(139, 92, 246, 0.32);
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.07), rgba(17, 17, 17, 0.03));
+.info-page-card {
+  width: min(860px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px;
+  border: 1px solid rgba(139, 92, 246, 0.14);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 34px rgba(17, 17, 17, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.info-page-card article + article {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.info-page-card h2 {
+  margin: 0 0 8px;
+  font: 800 18px var(--font-body);
+  color: var(--color-text-primary);
+}
+
+.info-page-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.info-page-card a {
+  color: var(--color-accent-hover);
+  font-weight: 700;
 }
 
 .brand-config-actions {
@@ -3605,15 +3613,12 @@ html[data-theme="dark"] .item-card-empty .item-img-wrap {
 }
 html[data-theme="dark"] .item-card-empty .item-info { background: var(--color-card-bg); }
 
-html[data-theme="dark"] .brand-mark,
 html[data-theme="dark"] .config-panel,
 html[data-theme="dark"] .config-drawer-panel,
-html[data-theme="dark"] .brand-results-panel {
+html[data-theme="dark"] .brand-results-panel,
+html[data-theme="dark"] .info-page-card {
     background: var(--color-card-bg);
     border-color: rgba(139, 92, 246, 0.22);
-}
-html[data-theme="dark"] .empty-listing-card {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.16), rgba(255, 255, 255, 0.035));
 }
 html[data-theme="dark"] .collection-card,
 html[data-theme="dark"] .product-card,
@@ -3800,13 +3805,6 @@ html[data-theme="dark"] .support-form input {
     .brand-config-section {
         grid-template-columns: 1fr;
     }
-
-    .brand-mark {
-        width: 118px;
-        height: 118px;
-    }
-
-    .brand-mark span { font-size: 46px; }
 
     .config-panel { position: static; }
 
@@ -4055,8 +4053,7 @@ html[data-theme="dark"] .support-form input {
     .category-card,
     .item-card,
     .product-card,
-    .collection-card,
-    .empty-listing-card {
+    .collection-card {
         border-radius: 12px;
         transform: none !important;
         animation: none !important;
@@ -4165,10 +4162,6 @@ html[data-theme="dark"] .support-form input {
 
     .brand-hero p {
         line-height: 1.55;
-    }
-
-    .brand-mark {
-        justify-self: start;
     }
 
     .brand-config-section,
