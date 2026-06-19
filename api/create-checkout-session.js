@@ -52,6 +52,8 @@ async function handleCheckout(req, res) {
   }
 
   const ip = getClientIp(req);
+  // Checkout creation can touch Stripe and order state, so keep this lower than
+  // read-only endpoints and key it by client IP before any remote calls run.
   if (!rateLimit(`checkout:${ip}`, 20, 60 * 1000)) {
     return sendError(res, 429, 'Too many checkout attempts. Try again later.');
   }

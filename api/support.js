@@ -50,6 +50,8 @@ async function handleSupport(req, res) {
     return sendError(res, 400, 'Invalid support request.');
   }
 
+  // General support polling/sending is capped per IP; message creation also has
+  // a tighter per-session limit below so one visitor cannot flood a thread.
   if (!rateLimit(`support:${ip}`, 30, 60 * 1000)) {
     return sendError(res, 429, 'Too many support requests. Try again later.');
   }
@@ -64,6 +66,8 @@ async function handleSupport(req, res) {
     return sendError(res, 400, 'Invalid support message.');
   }
 
+  // Separate write limiter lets users refresh message history more often than
+  // they can create new support messages.
   if (!rateLimit(`support-send:${ip}:${sessionId}`, 8, 60 * 1000)) {
     return sendError(res, 429, 'Too many support messages. Try again later.');
   }

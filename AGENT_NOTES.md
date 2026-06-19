@@ -57,6 +57,7 @@
 - Plan: continue from the next incomplete safe task in `TASKS.md`; first verify previous task coverage, then work on accessibility alt text improvements without changing app behavior.
 - Task 7 plan: verify existing `scripts/check-local-links.js` and npm wiring, run link/check/build commands, then mark the task complete if the local-link guard already covers HTML href/src targets.
 - Task 8 plan: improve only local UI empty-state copy/actions for wishlist, chats, and profile listings; avoid Supabase access or data/schema changes; validate with syntax/check/build.
+- Task 9 plan: add maintainability comments around origin allow-listing and rate-limit buckets in API code only; do not change runtime logic, secrets, database schema, or remote access.
 
 ## Выполненная автономная работа
 
@@ -72,6 +73,7 @@
 - Улучшены alt-тексты для логотипов брендов на главной странице и динамических изображений товаров/чатов в `script.js` без изменения поведения.
 - Проверена уже добавленная защита от битых локальных ссылок: `scripts/check-local-links.js` покрывает локальные `href`/`src` в 35 HTML-файлах и подключена к `npm run check`.
 - Улучшены пустые состояния для wishlist, chats и profile listings: добавлены более понятные заголовки, подсказки и безопасные локальные CTA без изменения данных или удалённого доступа.
+- Добавлены поддерживающие комментарии к API origin allow-list и rate-limit checks в `api/security-utils.js`, `api/create-checkout-session.js`, `api/support.js`, `api/support-admin.js`; поведение кода не менялось.
 
 ## Последние проверки
 

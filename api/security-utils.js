@@ -32,6 +32,9 @@ function getClientIp(req) {
   return forwarded || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
 }
 
+// Lightweight in-memory throttling for Vercel serverless instances.
+// This is intentionally per-instance and best-effort; endpoints still validate
+// method, origin, payload shape, and auth because cold starts reset this map.
 function rateLimit(key, limit, windowMs) {
   const now = Date.now();
   const bucket = (buckets.get(key) || []).filter((timestamp) => now - timestamp < windowMs);
@@ -54,6 +57,9 @@ function normalizeOrigin(value) {
 
 function getAllowedOrigins(req) {
   const origins = new Set();
+
+  // Prefer explicit app URLs from env, then include the canonical production URL.
+  // Values are normalized to origins so paths/trailing slashes do not matter.
   [process.env.APP_URL, process.env.NEXT_PUBLIC_APP_URL, 'https://kidan-shop.vercel.app'].filter(Boolean).forEach((value) => {
     const origin = normalizeOrigin(value);
     if (origin) origins.add(origin);
@@ -61,6 +67,8 @@ function getAllowedOrigins(req) {
 
   if (process.env.VERCEL_URL) origins.add(`https://${process.env.VERCEL_URL}`);
 
+  // Localhost is allowed only for the current request host to keep local dev
+  // usable without widening the production allow-list.
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const proto = req.headers['x-forwarded-proto'] || 'https';
   if (host && isLocalHost(host)) origins.add(`${proto}://${host}`);
@@ -79,6 +87,8 @@ function isLocalHost(host) {
 
 function hasTrustedOrigin(req) {
   const origin = normalizeOrigin(req.headers.origin || '');
+  // Browser POSTs must include an Origin that matches the app allow-list.
+  // Missing/invalid Origin is rejected instead of being treated as same-origin.
   if (!origin) return false;
   return getAllowedOrigins(req).has(origin);
 }

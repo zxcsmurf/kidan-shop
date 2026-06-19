@@ -50,6 +50,8 @@ async function handleSupportAdmin(req, res) {
     return sendError(res, 503, 'Support admin is not configured yet. Add SUPPORT_ADMIN_PIN, SUPABASE_URL, and SUPABASE_SERVICE_ROLE_KEY in Vercel.');
   }
 
+  // Admin endpoints are state-changing and PIN-protected; this broad IP cap
+  // catches noisy clients before action-specific checks run.
   if (!rateLimit(`support-admin:${ip}`, 20, 60 * 1000)) {
     return sendError(res, 429, 'Too many support admin requests. Try again later.');
   }
@@ -64,6 +66,7 @@ async function handleSupportAdmin(req, res) {
   }
 
   if (action === 'login') {
+    // PIN attempts get a longer, tighter window than normal admin actions.
     if (!rateLimit(`support-admin-pin:${ip}`, 6, 15 * 60 * 1000)) {
       return sendError(res, 429, 'Too many support PIN attempts. Try again later.');
     }
