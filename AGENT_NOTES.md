@@ -55,6 +55,7 @@
   - `AGENTS.md`, `TASKS.md`, and `AGENT_NOTES.md` exist.
   - Git status was clean before starting code/doc edits.
 - Plan: continue from the next incomplete safe task in `TASKS.md`; first verify previous task coverage, then work on accessibility alt text improvements without changing app behavior.
+- Task 7 plan: verify existing `scripts/check-local-links.js` and npm wiring, run link/check/build commands, then mark the task complete if the local-link guard already covers HTML href/src targets.
 
 ## Выполненная автономная работа
 
@@ -68,10 +69,12 @@
 - `npm run check` теперь запускает JSON/file/link/syntax проверки.
 - `npm run build` успешно запускает `npm run check`.
 - Улучшены alt-тексты для логотипов брендов на главной странице и динамических изображений товаров/чатов в `script.js` без изменения поведения.
+- Проверена уже добавленная защита от битых локальных ссылок: `scripts/check-local-links.js` покрывает локальные `href`/`src` в 35 HTML-файлах и подключена к `npm run check`.
 
 ## Последние проверки
 
 - `node` inline check for static HTML images missing alt — passed (`0`).
+- `npm run check:links` — passed.
 - `npm run check` — passed.
 - `npm run build` — passed.
 
