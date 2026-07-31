@@ -327,14 +327,14 @@ nav.filter-bar {
 .nav-brand {
     text-decoration: none;
     font-family: 'Playfair Display', serif;
-    font-size: 26px;
+    font-size: 20.8px;
     font-weight: 900;
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .brand-kidan { color: #7c3aed; }
-.brand-shop  { color: #111111; }
+.brand-shop  { color: #16a34a; }
 
 .nav-quality-bar {
     display: flex;
@@ -3096,7 +3096,7 @@ kbd {
         gap: 10px;
     }
 
-    .nav-brand { font-size: 18px; }
+    .nav-brand { font-size: 14.4px; }
 
     .qbtn {
         font-size: 12px;
@@ -3547,7 +3547,6 @@ html[data-theme="dark"] nav.filter-bar {
     border-bottom-color: rgba(139, 92, 246, 0.18);
 }
 
-html[data-theme="dark"] .brand-shop,
 html[data-theme="dark"] .nav-icon-btn { color: var(--color-text-primary); }
 
 html[data-theme="dark"] .qbtn { color: #b3a8c6; }
@@ -3828,7 +3827,7 @@ html[data-theme="dark"] .support-form input {
     }
 
     .nav-brand {
-        font-size: 18px;
+        font-size: 14.4px;
         flex: 0 0 auto;
     }
 
@@ -4340,7 +4339,7 @@ html[data-theme="dark"] .support-form input {
 @media (max-width: 380px) {
     .nav-brand {
         max-width: 108px;
-        font-size: 16px;
+        font-size: 12.8px;
     }
 
     .sell-btn {
